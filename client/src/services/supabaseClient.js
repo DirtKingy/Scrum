@@ -1,15 +1,6 @@
-// src/stores/boardsStore.js
-import { defineStore } from 'pinia'
-import { supabase } from '../services/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 
-export const useBoardsStore = defineStore('boards', {
-  state: () => ({
-    boards: []
-  }),
-  actions: {
-    async fetchBoards() {
-      const { data, error } = await supabase.from('boards').select('*')
-      if (!error) this.boards = data
-    }
-  }
-})
+const supabaseUrl = 'http://127.0.0.1:54321'      // lokaal
+const supabaseAnonKey = 'sbp_529565f72318c285e75ac6f7d1741da07d2ec3ea'       // dummy voor lokaal
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
