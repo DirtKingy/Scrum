@@ -1,13 +1,15 @@
 <template>
   <div>
-    <h1>Boards View</h1>
+    <h1>All Boards</h1>
+    <div v-if="boardsStore.errorMessage">{{ boardsStore.errorMessage }}</div>
+    <Board v-for="board in boardsStore.boards" :key="board.id" :board="board" />
   </div>
 </template>
 
 <script setup>
-// hier kun je later je Pinia store importeren en data fetchen
-</script>
+import { useBoardsStore } from '../stores/boardsStore'
+import Board from '../components/Board.vue'
 
-<style scoped>
-/* optioneel: styling */
-</style>
+const boardsStore = useBoardsStore()
+boardsStore.fetchBoards()
+</script>

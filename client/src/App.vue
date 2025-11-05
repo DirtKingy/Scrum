@@ -1,4 +1,4 @@
-<script setup lang="ts"></script>
+<!-- <script setup lang="ts"></script>
 
 <template>
   <h1>You did it!</h1>
@@ -8,4 +8,16 @@
   </p>
 </template>
 
-<style scoped></style>
+<style scoped></style> -->
+<template>
+  <div id="app">
+    <router-view />   <!-- <- hier worden alle routes gerenderd -->
+  </div>
+</template>
+
+<script setup>
+</script>
+
+<style>
+/* optioneel */
+</style>

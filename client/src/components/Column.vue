@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="column">
     <h3>{{ column.name }}</h3>
     <div class="cards">
       <Card v-for="card in cards" :key="card.id" :card="card" />
