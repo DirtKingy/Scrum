@@ -1,53 +1,47 @@
 <template>
-  <transition name="fade">
+  <div
+    class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50"
+    @click.self="$emit('close')"
+  >
     <div
-      v-if="show"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
-      @click.self="onCancel"
+      class="bg-gray-800 text-gray-100 rounded-2xl shadow-xl w-full max-w-md p-6 transform transition-all scale-100"
     >
-      <div class="bg-[var(--color-card-bg)] text-white p-6 rounded-2xl w-full max-w-md shadow-xl">
-        <h2 class="text-xl font-semibold mb-4">{{ title }}</h2>
-        <p class="text-gray-300 mb-6">{{ message }}</p>
+      <h2 class="text-xl font-semibold mb-4" :class="danger ? 'text-red-400' : 'text-purple-300'">
+        {{ title }}
+      </h2>
 
-        <div class="flex justify-end gap-3">
-          <button
-            @click="onCancel"
-            class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
-          >
-            Annuleren
-          </button>
+      <div class="mb-6">
+        <slot />
+      </div>
 
-          <button
-            @click="onConfirm"
-            class="px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-indigo-600 transition"
-          >
-            Bevestigen
-          </button>
-        </div>
+      <div class="flex justify-end gap-3">
+        <button
+          @click="$emit('close')"
+          class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
+        >
+          {{ cancelText }}
+        </button>
+
+        <button
+          @click="$emit('confirm')"
+          :class="danger
+            ? 'bg-red-600 hover:bg-red-700'
+            : 'bg-purple-600 hover:bg-purple-700'
+          "
+          class="px-4 py-2 rounded-lg text-white font-semibold transition"
+        >
+          {{ confirmText }}
+        </button>
       </div>
     </div>
-  </transition>
+  </div>
 </template>
 
 <script setup>
 defineProps({
-  show: Boolean,
   title: String,
-  message: String,
+  confirmText: { type: String, default: 'Bevestigen' },
+  cancelText: { type: String, default: 'Annuleren' },
+  danger: { type: Boolean, default: false }
 })
-const emit = defineEmits(['confirm', 'cancel'])
-
-const onConfirm = () => emit('confirm')
-const onCancel = () => emit('cancel')
 </script>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>
