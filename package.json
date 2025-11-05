@@ -1,5 +1,14 @@
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.79.0"
+    "@supabase/supabase-js": "^2.79.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16"
   }
 }
