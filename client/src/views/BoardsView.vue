@@ -40,9 +40,12 @@
         :key="board.id"
         class="bg-gray-800 rounded-xl shadow hover:shadow-xl transition p-6 flex flex-col justify-between"
       >
-        <h2 class="text-xl font-semibold mb-4 text-purple-300">
-          {{ board.name }}
-        </h2>
+      <RouterLink
+        :to="`/board/${board.id}`"
+        class="text-xl font-semibold mb-4 text-purple-300 hover:text-purple-400 transition"
+      >
+        {{ board.name }}
+      </RouterLink>
 
         <footer class="mt-auto flex justify-between items-center text-gray-400">
           <small class="text-sm">
