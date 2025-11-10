@@ -2,7 +2,7 @@
   <main class="min-h-screen bg-gray-900 text-gray-100 font-sans p-6">
     <!-- Header -->
     <header class="mb-8 flex justify-between items-center">
-      <div>
+      <section>
         <RouterLink
           to="/"
           class="text-purple-400 hover:text-purple-300 transition font-medium"
@@ -16,7 +16,7 @@
         <p v-if="board" class="text-gray-400 mt-1 text-sm">
           Gemaakt op {{ formatDate(board.created_at) }}
         </p>
-      </div>
+      </section>
 
       <button
         @click="openNewColumnModal"
@@ -26,32 +26,31 @@
       </button>
     </header>
 
-    <!-- Board Grid (Kanban style) -->
+    <!-- Board Kanban -->
     <section
       v-if="board"
       class="flex gap-6 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-gray-700"
+      aria-label="Kanban bord"
     >
-      <div
+      <article
         v-for="column in columns"
         :key="column.id"
         class="bg-gray-800 rounded-xl shadow flex-shrink-0 w-72 p-4 flex flex-col"
       >
         <header class="flex justify-between items-center mb-3">
-          <h2 class="text-lg font-semibold text-purple-300">
-            {{ column.name }}
-          </h2>
+          <h2 class="text-lg font-semibold text-purple-300">{{ column.name }}</h2>
           <button
             @click="deleteColumn(column.id)"
             class="text-red-500 hover:text-red-400"
-            title="Verwijder kolom"
+            aria-label="Kolom verwijderen"
           >
             ✕
           </button>
         </header>
 
-        <!-- Tasks inside column -->
-        <div class="space-y-3 flex-1 overflow-y-auto">
-          <div
+        <!-- Tasks -->
+        <section class="space-y-3 flex-1 overflow-y-auto" aria-label="Taken">
+          <article
             v-for="task in column.tasks"
             :key="task.id"
             class="bg-gray-700 p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
@@ -60,8 +59,8 @@
             <p v-if="task.description" class="text-sm text-gray-400 mt-1">
               {{ task.description }}
             </p>
-          </div>
-        </div>
+          </article>
+        </section>
 
         <footer class="mt-4">
           <button
@@ -71,25 +70,33 @@
             + Nieuwe taak
           </button>
         </footer>
-      </div>
+      </article>
 
-      <!-- Add new column button -->
-      <div
+      <!-- Add new column -->
+      <article
         @click="openNewColumnModal"
         class="w-72 flex-shrink-0 bg-gray-800/40 rounded-xl border-2 border-dashed border-gray-700 flex items-center justify-center text-gray-400 hover:text-purple-400 cursor-pointer transition"
+        role="button"
+        aria-label="Kolom toevoegen"
       >
         + Kolom toevoegen
-      </div>
+      </article>
     </section>
 
     <section v-else class="text-center text-gray-400 mt-12">
       <p>Board wordt geladen...</p>
     </section>
 
-    <!-- Modal -->
-    <BaseModal v-if="showModal" @close="showModal = false">
-      <template #title>Nieuwe Kolom</template>
-      <template #content>
+    <!-- Modal (teleport naar body) -->
+    <teleport to="body">
+      <BaseModal
+        v-if="showModal"
+        @close="showModal = false"
+        title="Nieuwe Kolom"
+        confirmText="Aanmaken"
+        cancelText="Annuleren"
+        @confirm="createColumn"
+      >
         <form @submit.prevent="createColumn" class="space-y-4">
           <input
             v-model="newColumnName"
@@ -98,15 +105,9 @@
             class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500 focus:outline-none"
             required
           />
-          <button
-            type="submit"
-            class="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg transition"
-          >
-            Kolom aanmaken
-          </button>
         </form>
-      </template>
-    </BaseModal>
+      </BaseModal>
+    </teleport>
   </main>
 </template>
 
@@ -133,10 +134,7 @@ onMounted(async () => {
 
   if (board.value) {
     await columnsStore.fetchColumns(id)
-    columns.value = columnsStore.columns.map(col => ({
-      ...col,
-      tasks: [] // later vullen met taken
-    }))
+    columns.value = columnsStore.columns.map(col => ({ ...col, tasks: [] }))
   }
 })
 
@@ -157,10 +155,7 @@ async function createColumn() {
   newColumnName.value = ''
   showModal.value = false
   await columnsStore.fetchColumns(board.value.id)
-  columns.value = columnsStore.columns.map(col => ({
-    ...col,
-    tasks: []
-  }))
+  columns.value = columnsStore.columns.map(col => ({ ...col, tasks: [] }))
 }
 
 function addTask(columnId) {
