@@ -106,7 +106,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useBoardsStore } from '../stores/boardsStore'
-import BaseModal from '../components/BaseModal.vue'
+import BaseModal from '../components/base/BaseModal.vue'
 
 const boardsStore = useBoardsStore()
 const newBoardName = ref('')

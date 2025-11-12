@@ -1,7 +1,6 @@
 -- create_cards.sql
 create table cards (
   id uuid primary key default gen_random_uuid(),
-  board_id uuid references boards(id) on delete cascade,
   column_id uuid references columns(id),
   creator_id uuid references people(id),
   assignee_id uuid references people(id),

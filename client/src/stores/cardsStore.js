@@ -8,14 +8,23 @@ export const useCardsStore = defineStore('cards', {
   }),
   actions: {
     async fetchCards(columnId) {
-      try {
-        const { data, error } = await supabase.from('cards').select('*').eq('column_id', columnId)
-        if (error) throw error
-        this.cards = data
-      } catch (err) {
-        console.error(err)
-        this.errorMessage = 'Kon cards niet laden'
-      }
+      const { data, error } = await supabase
+        .from('cards')
+        .select('*')
+        .eq('column_id', columnId)
+        .order('created_at', { ascending: true })
+
+      if (error) this.errorMessage = error.message
+      else this.cards = data
+    },
+    async createCard(columnId, title, description = '') {
+      const { data, error } = await supabase
+        .from('cards')
+        .insert({ column_id: columnId, title, description })
+        .select()
+
+      if (error) this.errorMessage = error.message
+      else this.cards.push(data[0])
     }
   }
 })

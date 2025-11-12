@@ -1,102 +1,19 @@
 <template>
   <main class="min-h-screen bg-gray-900 text-gray-100 font-sans p-6">
-    <!-- Header -->
-    <header class="mb-8 flex justify-between items-center">
-      <section>
-        <RouterLink
-          to="/"
-          class="text-purple-400 hover:text-purple-300 transition font-medium"
-        >
-          ← Terug naar overzicht
-        </RouterLink>
+    <BoardHeader :board="board" @new-column="openNewColumnModal" />
 
-        <h1 class="text-3xl font-bold mt-3 text-purple-300">
-          {{ board?.name || 'Board laden...' }}
-        </h1>
-        <p v-if="board" class="text-gray-400 mt-1 text-sm">
-          Gemaakt op {{ formatDate(board.created_at) }}
-        </p>
-      </section>
-
-      <button
-        @click="openNewColumnModal"
-        class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg shadow transition"
-      >
-        + Nieuwe kolom
-      </button>
-    </header>
-
-    <!-- Board Kanban -->
-    <section
+    <BoardColumns
       v-if="board"
-      class="flex gap-6 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-gray-700"
-      aria-label="Kanban bord"
-    >
-      <article
-        v-for="column in columns"
-        :key="column.id"
-        class="bg-gray-800 rounded-xl shadow flex-shrink-0 w-72 p-4 flex flex-col"
-      >
-        <header class="flex justify-between items-center mb-3">
-          <h2 class="text-lg font-semibold text-purple-300">{{ column.name }}</h2>
-          <button
-            @click="deleteColumn(column.id)"
-            class="text-red-500 hover:text-red-400"
-            aria-label="Kolom verwijderen"
-          >
-            ✕
-          </button>
-        </header>
+      :columns="columns"
+      @add-card="openNewCardModal"
+      @delete-column="deleteColumn"
+      @edit-card="editCard"
+      @new-column="openNewColumnModal"
+    />
 
-        <!-- Tasks -->
-        <section class="space-y-3 flex-1 overflow-y-auto" aria-label="Taken">
-          <article
-            v-for="task in column.tasks"
-            :key="task.id"
-            class="bg-gray-700 p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-          >
-            <p class="font-medium text-gray-100">{{ task.title }}</p>
-            <p v-if="task.description" class="text-sm text-gray-400 mt-1">
-              {{ task.description }}
-            </p>
-          </article>
-        </section>
-
-        <footer class="mt-4">
-          <button
-            @click="addTask(column.id)"
-            class="text-purple-400 hover:text-purple-300 text-sm font-medium"
-          >
-            + Nieuwe taak
-          </button>
-        </footer>
-      </article>
-
-      <!-- Add new column -->
-      <article
-        @click="openNewColumnModal"
-        class="w-72 flex-shrink-0 bg-gray-800/40 rounded-xl border-2 border-dashed border-gray-700 flex items-center justify-center text-gray-400 hover:text-purple-400 cursor-pointer transition"
-        role="button"
-        aria-label="Kolom toevoegen"
-      >
-        + Kolom toevoegen
-      </article>
-    </section>
-
-    <section v-else class="text-center text-gray-400 mt-12">
-      <p>Board wordt geladen...</p>
-    </section>
-
-    <!-- Modal (teleport naar body) -->
-    <teleport to="body">
-      <BaseModal
-        v-if="showModal"
-        @close="showModal = false"
-        title="Nieuwe Kolom"
-        confirmText="Aanmaken"
-        cancelText="Annuleren"
-        @confirm="createColumn"
-      >
+    <!-- Column modal -->
+    <BaseModal v-if="showColumnModal" @close="showColumnModal = false" @confirm="createColumn" title="Nieuwe Kolom">
+      <section>
         <form @submit.prevent="createColumn" class="space-y-4">
           <input
             v-model="newColumnName"
@@ -106,26 +23,56 @@
             required
           />
         </form>
-      </BaseModal>
-    </teleport>
+      </section>
+    </BaseModal>
+
+    <!-- Card modal -->
+    <BaseModal v-if="showCardModal" @close="showCardModal = false" @confirm="createCard" title="Nieuwe Kaart">
+      <section class="space-y-4">
+        <input
+          v-model="newCardTitle"
+          type="text"
+          placeholder="Titel van kaart"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+          required
+        />
+        <textarea
+          v-model="newCardDescription"
+          placeholder="Beschrijving (optioneel)"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500 focus:outline-none resize-none"
+        ></textarea>
+      </section>
+    </BaseModal>
   </main>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
-import BaseModal from '../components/BaseModal.vue'
+import { useRoute } from 'vue-router'
+import BaseModal from '../components/base/BaseModal.vue'
+import BoardHeader from '../components/boards/BoardHeader.vue'
+import BoardColumns from '../components/boards/BoardColumns.vue'
 import { useBoardsStore } from '../stores/boardsStore'
 import { useColumnsStore } from '../stores/columnsStore'
+import { useCardsStore } from '../stores/cardsStore'
 
 const route = useRoute()
 const boardsStore = useBoardsStore()
 const columnsStore = useColumnsStore()
+const cardsStore = useCardsStore()
 
 const board = ref(null)
 const columns = ref([])
-const showModal = ref(false)
+
+// Column modal
+const showColumnModal = ref(false)
 const newColumnName = ref('')
+
+// Card modal
+const showCardModal = ref(false)
+const newCardTitle = ref('')
+const newCardDescription = ref('')
+const cardColumnId = ref(null)
 
 onMounted(async () => {
   const id = route.params.id
@@ -134,32 +81,65 @@ onMounted(async () => {
 
   if (board.value) {
     await columnsStore.fetchColumns(id)
-    columns.value = columnsStore.columns.map(col => ({ ...col, tasks: [] }))
+
+    // Voor elke kolom ook de kaarten ophalen
+    const colsWithCards = []
+    for (const col of columnsStore.columns) {
+      await cardsStore.fetchCards(col.id)
+      colsWithCards.push({
+        ...col,
+        cards: cardsStore.cards.filter(c => c.column_id === col.id)
+      })
+    }
+    columns.value = colsWithCards
   }
 })
 
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('nl-NL', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
 function openNewColumnModal() {
-  showModal.value = true
+  showColumnModal.value = true
 }
 
 async function createColumn() {
+  if (!newColumnName.value) return
   await columnsStore.createColumn(board.value.id, newColumnName.value)
   newColumnName.value = ''
-  showModal.value = false
+  showColumnModal.value = false
   await columnsStore.fetchColumns(board.value.id)
-  columns.value = columnsStore.columns.map(col => ({ ...col, tasks: [] }))
+  columns.value = columnsStore.columns.map(col => ({ ...col, cards: [] }))
 }
 
-function addTask(columnId) {
-  alert(`Nieuwe taak toevoegen aan kolom ${columnId} (komt nog)`)
+function openNewCardModal(columnId) {
+  cardColumnId.value = columnId
+  newCardTitle.value = ''
+  newCardDescription.value = ''
+  showCardModal.value = true
+}
+
+async function createCard() {
+  if (!newCardTitle.value) return
+
+  const newCard = await cardsStore.createCard(
+    cardColumnId.value,
+    newCardTitle.value,
+    newCardDescription.value
+  )
+
+  // Sluit de modal
+  showCardModal.value = false
+  newCardTitle.value = ''
+  newCardDescription.value = ''
+
+  // Voeg nieuwe kaart direct toe aan de juiste kolom
+  const col = columns.value.find(c => c.id === cardColumnId.value)
+  if (col) col.cards.push(newCard)
+}
+
+function addCard(columnId) {
+  openNewCardModal(columnId)
+}
+
+function editCard(card, columnId) {
+  alert(`Kaart bewerken: ${card.title} (komt nog)`)
 }
 
 function deleteColumn(columnId) {
