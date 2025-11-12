@@ -10,7 +10,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import Column from './Column.vue'
-import { useColumnsStore } from '../stores/columnsStore'
+import { useColumnsStore } from '../../stores/columnsStore'
 
 const props = defineProps({ board: Object })
 const columnsStore = useColumnsStore()
