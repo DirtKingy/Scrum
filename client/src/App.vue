@@ -10,9 +10,9 @@
 
 <style scoped></style> -->
 <template>
-  <div id="app">
+  <!-- <div id="app"> -->
     <router-view />   <!-- <- hier worden alle routes gerenderd -->
-  </div>
+  <!-- </div> -->
 </template>
 
 <script setup>
