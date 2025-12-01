@@ -16,14 +16,6 @@
       </p>
     </section>
 
-    <section>
-      <button
-        @click="$emit('new-column')"
-        class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg shadow transition"
-      >
-        + Nieuwe kolom
-      </button>
-    </section>
   </header>
 </template>
 
