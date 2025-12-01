@@ -2,28 +2,29 @@
   <main class="min-h-screen bg-gray-900 text-gray-100 font-sans p-6">
     <BoardHeader :board="board" @new-column="openNewColumnModal" />
 
-    <BoardColumns
-      v-if="board"
-      :columns="columns"
-      @add-card="openNewCardModal"
-      @delete-column="deleteColumn"
-      @edit-card="editCard"
-      @new-column="openNewColumnModal"
-    />
+    <div class="flex space-x-4">
+      <BoardColumn
+        v-for="column in columns"
+        :key="column.id"
+        :column="column"
+        @add-card="openNewCardModal"
+        @edit-card="editCard"
+        @delete-column="deleteColumn"
+        @card-moved="onCardMoved"
+      />
+    </div>
 
     <!-- Column modal -->
     <BaseModal v-if="showColumnModal" @close="showColumnModal = false" @confirm="createColumn" title="Nieuwe Kolom">
-      <section>
-        <form @submit.prevent="createColumn" class="space-y-4">
-          <input
-            v-model="newColumnName"
-            type="text"
-            placeholder="Naam van kolom"
-            class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500 focus:outline-none"
-            required
-          />
-        </form>
-      </section>
+      <form @submit.prevent="createColumn" class="space-y-4">
+        <input
+          v-model="newColumnName"
+          type="text"
+          placeholder="Naam van kolom"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
+          required
+        />
+      </form>
     </BaseModal>
 
     <!-- Card modal -->
@@ -33,13 +34,13 @@
           v-model="newCardTitle"
           type="text"
           placeholder="Titel van kaart"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
           required
         />
         <textarea
           v-model="newCardDescription"
           placeholder="Beschrijving (optioneel)"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500 focus:outline-none resize-none"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 resize-none"
         ></textarea>
       </section>
     </BaseModal>
@@ -51,7 +52,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseModal from '../components/base/BaseModal.vue'
 import BoardHeader from '../components/boards/BoardHeader.vue'
-import BoardColumns from '../components/boards/BoardColumns.vue'
+import BoardColumn from '../components/boards/BoardColumn.vue'
 import { useBoardsStore } from '../stores/boardsStore'
 import { useColumnsStore } from '../stores/columnsStore'
 import { useCardsStore } from '../stores/cardsStore'
@@ -74,40 +75,46 @@ const newCardTitle = ref('')
 const newCardDescription = ref('')
 const cardColumnId = ref(null)
 
-onMounted(async () => {
+async function loadBoardData() {
   const id = route.params.id
+
   await boardsStore.fetchBoards()
   board.value = boardsStore.boards.find(b => b.id === id)
 
-  if (board.value) {
-    await columnsStore.fetchColumns(id)
+  if (!board.value) return
 
-    // Voor elke kolom ook de kaarten ophalen
-    const colsWithCards = []
-    for (const col of columnsStore.columns) {
-      await cardsStore.fetchCards(col.id)
-      colsWithCards.push({
-        ...col,
-        cards: cardsStore.cards.filter(c => c.column_id === col.id)
-      })
-    }
-    columns.value = colsWithCards
-  }
+  // Haal kolommen op
+  await columnsStore.fetchColumns(id)
+
+  // Kolommen + kaarten samenvoegen
+  const merged = (columnsStore.columns || []).map(col => ({
+    ...col,
+    cards: cardsStore.cardsByColumn[col.id] || []
+  }))
+
+  columns.value = merged
+}
+
+onMounted(async () => {
+  await loadBoardData()
 })
 
+// -------- Column actions --------
 function openNewColumnModal() {
   showColumnModal.value = true
 }
 
 async function createColumn() {
   if (!newColumnName.value) return
+
   await columnsStore.createColumn(board.value.id, newColumnName.value)
   newColumnName.value = ''
   showColumnModal.value = false
-  await columnsStore.fetchColumns(board.value.id)
-  columns.value = columnsStore.columns.map(col => ({ ...col, cards: [] }))
+
+  await loadBoardData()
 }
 
+// -------- Card actions --------
 function openNewCardModal(columnId) {
   cardColumnId.value = columnId
   newCardTitle.value = ''
@@ -118,34 +125,37 @@ function openNewCardModal(columnId) {
 async function createCard() {
   if (!newCardTitle.value) return
 
-  const newCard = await cardsStore.createCard(
+  const created = await cardsStore.createCard(
     cardColumnId.value,
     newCardTitle.value,
     newCardDescription.value
   )
 
-  // Sluit de modal
   showCardModal.value = false
   newCardTitle.value = ''
   newCardDescription.value = ''
 
-  // Voeg nieuwe kaart direct toe aan de juiste kolom
   const col = columns.value.find(c => c.id === cardColumnId.value)
-  if (col) col.cards.push(newCard)
-}
-
-function addCard(columnId) {
-  openNewCardModal(columnId)
+  if (col) col.cards.push(created)
 }
 
 function editCard(card, columnId) {
-  alert(`Kaart bewerken: ${card.title} (komt nog)`)
+  alert('Kaart bewerken: ' + card.title)
 }
 
 function deleteColumn(columnId) {
-  if (confirm('Weet je zeker dat je deze kolom wilt verwijderen?')) {
-    columnsStore.deleteColumn(columnId)
-    columns.value = columns.value.filter(c => c.id !== columnId)
-  }
+  if (!confirm('Kolom verwijderen?')) return
+  columnsStore.deleteColumn(columnId)
+  columns.value = columns.value.filter(c => c.id !== columnId)
+}
+
+// -------- Drag & Drop --------
+function onCardMoved({ cardId, fromColumnId, toColumnId, oldIndex, newIndex }) {
+  const fromCol = columns.value.find(c => c.id === fromColumnId)
+  const toCol = columns.value.find(c => c.id === toColumnId)
+  if (!fromCol || !toCol) return
+
+  const [movedCard] = fromCol.cards.splice(oldIndex, 1)
+  toCol.cards.splice(newIndex, 0, movedCard)
 }
 </script>

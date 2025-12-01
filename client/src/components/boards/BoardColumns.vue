@@ -1,24 +1,28 @@
 <template>
-  <section class="flex gap-6 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-gray-700">
+  <section class="flex gap-4 overflow-x-auto pb-4">
     <BoardColumn
-      v-for="column in columns"
-      :key="column.id"
-      :column="column"
-      @add-card="$emit('add-card', $event)"
-      @delete-column="$emit('delete-column', $event)"
-      @edit-card="$emit('edit-card', $event, $eventColumn)"
+      v-for="col in columns"
+      :key="col.id"
+      :column="col"
+      @add-card="$emit('add-card', col.id)"
+      @delete-column="$emit('delete-column', col.id)"
+      @edit-card="$emit('edit-card', $event)"
+      @card-moved="onCardMoved"
     />
-    <article
+    <button
       @click="$emit('new-column')"
-      class="w-72 flex-shrink-0 bg-gray-800/40 rounded-xl border-2 border-dashed border-gray-700 flex items-center justify-center text-gray-400 hover:text-purple-400 cursor-pointer transition"
-    >
-      + Kolom toevoegen
-    </article>
+      class="bg-gray-800 text-purple-300 px-4 py-2 rounded-xl w-72 flex-shrink-0"
+    >+ Kolom toevoegen</button>
   </section>
 </template>
 
 <script setup>
 import BoardColumn from './BoardColumn.vue'
+
 defineProps({ columns: Array })
-const emit = defineEmits(['add-card', 'delete-column', 'edit-card', 'new-column'])
+const emit = defineEmits(['add-card','delete-column','edit-card','new-column','card-moved'])
+
+function onCardMoved(event) {
+  emit('card-moved', event)
+}
 </script>
