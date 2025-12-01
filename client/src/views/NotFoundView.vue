@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <article>
     <h1>404 - Page Not Found</h1>
     <p>De opgevraagde pagina bestaat niet.</p>
-  </div>
+  </article>
 </template>
 
 <script setup>
