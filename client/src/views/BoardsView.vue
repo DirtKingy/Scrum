@@ -40,18 +40,18 @@
         :key="board.id"
         class="bg-gray-800 rounded-xl shadow hover:shadow-xl transition p-6 flex flex-col justify-between"
       >
-      <RouterLink
-        :to="`/board/${board.id}`"
-        class="text-xl font-semibold mb-4 text-purple-300 hover:text-purple-400 transition"
-      >
-        {{ board.name }}
-      </RouterLink>
+        <RouterLink
+          :to="`/board/${board.id}`"
+          class="text-xl font-semibold mb-4 text-purple-300 hover:text-purple-400 transition"
+        >
+          {{ board.name }}
+        </RouterLink>
 
         <footer class="mt-auto flex justify-between items-center text-gray-400">
           <small class="text-sm">
             Gemaakt: {{ formatDate(board.created_at) }}
           </small>
-          <div class="flex gap-2">
+          <section class="flex gap-2">
             <button
               @click="openEditModal(board)"
               class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
@@ -60,11 +60,12 @@
             </button>
             <button
               @click="openDeleteModal(board)"
+              :key="board.id"
               class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
             >
               Verwijderen
             </button>
-          </div>
+          </section>
         </footer>
       </article>
     </section>
