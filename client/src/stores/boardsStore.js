@@ -9,7 +9,7 @@ export const useBoardsStore = defineStore('boards', {
   actions: {
     async fetchBoards() {
       try {
-        const { data, error } = await supabase.from('boards').select('*')
+        const { data, error } = await supabase.from('boards').select('*').order('updated_at', { ascending: false })
         if (error) throw error
         this.boards = data
       } catch (err) {
@@ -32,7 +32,7 @@ export const useBoardsStore = defineStore('boards', {
     },
     async updateBoard(id, newName) {
       try {
-        const { data, error } = await supabase.from('boards').update({ name: newName }).eq('id', id)
+        const { data, error } = await supabase.from('boards').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', id)
         if (error) throw error
         const index = this.boards.findIndex(b => b.id === id)
         if (index !== -1) this.boards[index].name = newName
