@@ -44,6 +44,31 @@
         ></textarea>
       </section>
     </BaseModal>
+
+    <BaseModal 
+      v-if="showEditModal"
+      title="Kaart bewerken"
+      confirm-text="Opslaan"
+      cancel-text="Annuleren"
+      @close="closeModal"
+      @confirm="confirmEdit"
+    >
+      <section class="space-y-4">
+        <input
+          v-model="selectedCard.title"
+          type="text"
+          placeholder="Titel van kaart"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
+          required
+        />
+        <textarea
+          v-model="selectedCard.description"
+          placeholder="Beschrijving (optioneel)"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 resize-none"
+        ></textarea>
+      </section>
+    </BaseModal>
+
   </main>
 </template>
 
@@ -144,7 +169,8 @@ async function createCard() {
 }
 
 function editCard(card) {
-  alert('Kaart bewerken: ' + card.title)
+  selectedCard.value = card;
+  showEditModal.value = true;
 }
 
 function deleteColumn(columnId) {
