@@ -86,6 +86,10 @@ async function loadBoardData() {
   // Haal kolommen op
   await columnsStore.fetchColumns(id)
 
+  for (const col of columnsStore.columns) {
+    await cardsStore.fetchCards(col.id)
+  }
+  
   // Kolommen + kaarten samenvoegen
   const merged = (columnsStore.columns || []).map(col => ({
     ...col,
@@ -139,7 +143,7 @@ async function createCard() {
   if (col) col.cards.push(created)
 }
 
-function editCard(card, columnId) {
+function editCard(card) {
   alert('Kaart bewerken: ' + card.title)
 }
 
