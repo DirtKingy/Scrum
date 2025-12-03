@@ -33,40 +33,67 @@
       </button>
     </form>
 
-    <!-- Boards Grid -->
-    <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section class="space-y-3">
       <article
         v-for="board in boardsStore.boards"
         :key="board.id"
-        class="bg-gray-800 rounded-xl shadow hover:shadow-xl transition p-6 flex flex-col justify-between"
+        class="flex items-center justify-between p-4 rounded-lg border bg-white hover:bg-gray-50 transition cursor-pointer group"
+        style="border-color: var(--color-border)"
+        @click="$router.push(`/board/${board.id}`)"
       >
-        <RouterLink
-          :to="`/board/${board.id}`"
-          class="text-xl font-semibold mb-4 text-purple-300 hover:text-purple-400 transition"
-        >
-          {{ board.name }}
-        </RouterLink>
+        <!-- Left side: title & metadata -->
+        <div class="flex flex-col">
+          <h2
+            class="text-lg font-semibold group-hover:underline underline-offset-4"
+            style="color: var(--color-accent)"
+          >
+            {{ board.name }}
+          </h2>
 
-        <footer class="mt-auto flex justify-between items-center text-gray-400">
-          <small class="text-sm">
+          <small style="color: var(--color-text-muted)">
             Gemaakt: {{ formatDate(board.created_at) }}
           </small>
-          <section class="flex gap-2">
-            <button
-              @click="openEditModal(board)"
-              class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
-            >
-              Bewerken
-            </button>
-            <button
-              @click="openDeleteModal(board)"
-              :key="board.id"
-              class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-            >
-              Verwijderen
-            </button>
-          </section>
-        </footer>
+        </div>
+
+        <!-- Middle: Preview info (like Asana recent items) -->
+        <div class="hidden md:flex items-center gap-6 text-sm" style="color: var(--color-text-muted)">
+          <!-- Example: number of tasks -->
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" style="background-color: var(--color-accent-muted)"></span>
+            {{ board.tasks?.length ?? 0 }} taken
+          </div>
+
+          <!-- Example: last update -->
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+            Laatste activiteit: {{ board.updated_at ? formatDate(board.updated_at) : '—' }}
+          </div>
+        </div>
+
+        <!-- Right side: actions -->
+        <div class="flex items-center gap-2">
+          
+          <button
+            @click.stop="openEditModal(board)"
+            class="px-3 py-1.5 rounded-md text-sm border transition"
+            style="
+              border-color: var(--color-border);
+              background-color: var(--color-surface);
+              color: var(--color-text);
+            "
+          >
+            Bewerken
+          </button>
+
+          <button
+            @click.stop="openDeleteModal(board)"
+            class="px-3 py-1.5 rounded-md text-sm transition text-white"
+            style="background-color: var(--color-danger-dark)"
+          >
+            Verwijderen
+          </button>
+
+        </div>
       </article>
     </section>
 
