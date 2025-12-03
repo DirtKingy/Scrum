@@ -3,7 +3,6 @@
 
 /* Tailwind 4: thema extensie met @theme */
 @theme {
-  --font-sans: "Inter", system-ui, sans-serif;
   /* Branding Accent (subtiel gebruikt) */
   --color-accent: #40E0D0; /* jouw turquoise */
   --color-accent-muted: #2bbcb3;

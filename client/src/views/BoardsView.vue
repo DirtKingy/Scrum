@@ -1,15 +1,27 @@
 <template>
-  <main class="min-h-screen bg-gray-900 font-sans p-6 text-gray-100">
+  <main
+    class="min-h-screen font-sans p-8"
+    style="background-color: var(--color-bg); color: var(--color-text)"
+  >
     <!-- Header -->
-    <header class="mb-8 text-center">
-      <h1 class="text-4xl font-bold text-purple-400 mb-2">Scrum Boards</h1>
-      <p class="text-gray-400">Beheer je projecten en taken overzichtelijk</p>
+    <header class="mb-12 text-center">
+      <h1 class="text-4xl font-semibold mb-2">
+        Scrum Boards
+      </h1>
+      <p class="text-[var(--color-text-muted)] text-lg">
+        Beheer je projecten en taken overzichtelijk
+      </p>
     </header>
 
     <!-- Error message -->
     <p
       v-if="boardsStore.errorMessage"
-      class="mb-6 p-4 bg-red-700/30 text-red-400 rounded shadow-sm text-center"
+      class="mb-6 p-4 rounded-lg shadow text-center border"
+      style="
+        background-color: var(--color-danger-dark);
+        border-color: var(--color-danger);
+        color: white;
+      "
     >
       {{ boardsStore.errorMessage }}
     </p>
@@ -17,87 +29,88 @@
     <!-- Create Board Form -->
     <form
       @submit.prevent="addBoard"
-      class="mb-8 max-w-md mx-auto flex gap-3 items-center"
+      class="mb-10 max-w-lg mx-auto flex gap-4 items-center"
     >
       <input
         v-model="newBoardName"
-        placeholder="Nieuw board aanmaken..."
-        class="flex-1 px-4 py-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-400 focus:outline-none shadow-sm"
+        placeholder="Nieuw board..."
+        class="flex-1 px-4 py-3 rounded-lg shadow border focus:ring-2 transition outline-none"
+        style="
+          background-color: var(--color-surface);
+          border-color: var(--color-border);
+          color: var(--color-text);
+          focus:ring-color: var(--color-accent-muted);
+        "
         required
       />
+
       <button
         type="submit"
-        class="px-5 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow hover:bg-purple-600 transition"
+        class="px-6 py-3 font-medium rounded-lg transition shadow"
+        style="
+          background-color: var(--color-primary-btn);
+          color: var(--color-text);
+        "
       >
         + Toevoegen
       </button>
     </form>
 
-    <section class="space-y-3">
+    <!-- Boards Grid -->
+    <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
       <article
         v-for="board in boardsStore.boards"
         :key="board.id"
-        class="flex items-center justify-between p-4 rounded-lg border bg-white hover:bg-gray-50 transition cursor-pointer group"
-        style="border-color: var(--color-border)"
-        @click="$router.push(`/board/${board.id}`)"
+        class="p-6 rounded-xl shadow-lg transition hover:shadow-xl flex flex-col border-l-4"
+        style="
+          background-color: var(--color-surface);
+          border-color: var(--color-accent-muted);
+        "
       >
-        <!-- Left side: title & metadata -->
-        <div class="flex flex-col">
-          <h2
-            class="text-lg font-semibold group-hover:underline underline-offset-4"
-            style="color: var(--color-accent)"
-          >
-            {{ board.name }}
-          </h2>
+        <RouterLink
+          :to="`/board/${board.id}`"
+          class="text-xl font-semibold mb-4 transition hover:underline underline-offset-4"
+          style="
+            color: var(--color-accent);
+          "
+        >
+          {{ board.name }}
+        </RouterLink>
 
+        <footer class="mt-auto flex justify-between items-center text-sm">
           <small style="color: var(--color-text-muted)">
             Gemaakt: {{ formatDate(board.created_at) }}
           </small>
-        </div>
 
-        <!-- Middle: Preview info (like Asana recent items) -->
-        <div class="hidden md:flex items-center gap-6 text-sm" style="color: var(--color-text-muted)">
-          <!-- Example: number of tasks -->
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full" style="background-color: var(--color-accent-muted)"></span>
-            {{ board.tasks?.length ?? 0 }} taken
-          </div>
+          <section class="flex gap-3">
+            <button
+              @click="openEditModal(board)"
+              class="px-3 py-1.5 rounded-md transition text-sm font-medium border"
+              style="
+                background-color: var(--color-primary-btn);
+                border-color: var(--color-border);
+                color: var(--color-text);
+              "
+            >
+              Bewerken
+            </button>
 
-          <!-- Example: last update -->
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-gray-400"></span>
-            Laatste activiteit: {{ board.updated_at ? formatDate(board.updated_at) : '—' }}
-          </div>
-        </div>
-
-        <!-- Right side: actions -->
-        <div class="flex items-center gap-2">
-          
-          <button
-            @click.stop="openEditModal(board)"
-            class="px-3 py-1.5 rounded-md text-sm border transition"
-            style="
-              border-color: var(--color-border);
-              background-color: var(--color-surface);
-              color: var(--color-text);
-            "
-          >
-            Bewerken
-          </button>
-
-          <button
-            @click.stop="openDeleteModal(board)"
-            class="px-3 py-1.5 rounded-md text-sm transition text-white"
-            style="background-color: var(--color-danger-dark)"
-          >
-            Verwijderen
-          </button>
-
-        </div>
+            <button
+              @click="openDeleteModal(board)"
+              class="px-3 py-1.5 rounded-md transition text-sm font-medium"
+              style="
+                background-color: var(--color-danger-dark);
+                color: white;
+              "
+            >
+              Verwijderen
+            </button>
+          </section>
+        </footer>
       </article>
     </section>
 
-    <!-- Modal: Edit Board -->
+    <!-- Modals -->
     <BaseModal
       v-if="showEditModal"
       title="Board bewerken"
@@ -108,11 +121,16 @@
     >
       <input
         v-model="editBoardName"
-        class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-gray-100 focus:ring-2 focus:ring-purple-400 outline-none"
+        class="w-full px-3 py-3 rounded-lg border shadow outline-none focus:ring-2"
+        style="
+          background-color: var(--color-surface);
+          border-color: var(--color-border);
+          color: var(--color-text);
+          focus:ring-color: var(--color-accent-muted);
+        "
       />
     </BaseModal>
 
-    <!-- Modal: Delete Board -->
     <BaseModal
       v-if="showDeleteModal"
       title="Board verwijderen"
@@ -122,10 +140,12 @@
       @close="closeModal"
       @confirm="confirmDelete"
     >
-      <p class="text-gray-300">
+      <p class="text-[var(--color-text-muted)]">
         Weet je zeker dat je het board
-        <span class="text-red-400 font-semibold">"{{ selectedBoard?.name }}"</span>
-        wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.
+        <span class="font-semibold" style="color: var(--color-danger)">
+          "{{ selectedBoard?.name }}"
+        </span>
+        wilt verwijderen?
       </p>
     </BaseModal>
   </main>
