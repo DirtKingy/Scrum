@@ -8,7 +8,7 @@
         :key="column.id"
         :column="column"
         @add-card="openNewCardModal"
-        @edit-card="editCard"
+        @edit-card="openEditCardModal"
         @delete-column="deleteColumn"
         @card-moved="onCardMoved"
       />
@@ -48,23 +48,20 @@
     <BaseModal 
       v-if="showEditModal"
       title="Kaart bewerken"
-      confirm-text="Opslaan"
-      cancel-text="Annuleren"
-      @close="closeModal"
-      @confirm="confirmEdit"
+      @close="showEditModal = false"
+      @confirm="saveEditedCard"
     >
       <section class="space-y-4">
         <input
           v-model="selectedCard.title"
           type="text"
-          placeholder="Titel van kaart"
           class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
           required
         />
+
         <textarea
           v-model="selectedCard.description"
-          placeholder="Beschrijving (optioneel)"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 resize-none"
+          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
         ></textarea>
       </section>
     </BaseModal>
@@ -99,6 +96,10 @@ const showCardModal = ref(false)
 const newCardTitle = ref('')
 const newCardDescription = ref('')
 const cardColumnId = ref(null)
+
+// Edit modal
+const showEditModal = ref(false)
+const selectedCard = ref(null)
 
 async function loadBoardData() {
   const id = route.params.id
@@ -151,6 +152,12 @@ function openNewCardModal(columnId) {
   showCardModal.value = true
 }
 
+function openEditCardModal(card, columnId) {
+  selectedCard.value = { ...card } // kopie zodat je tijdens editen niet UI breekt
+  cardColumnId.value = columnId
+  showEditModal.value = true
+}
+
 async function createCard() {
   if (!newCardTitle.value) return
 
@@ -168,9 +175,23 @@ async function createCard() {
   if (col) col.cards.push(created)
 }
 
-function editCard(card) {
-  selectedCard.value = card;
-  showEditModal.value = true;
+async function saveEditedCard() {
+  const updated = await cardsStore.updateCard(
+    selectedCard.value.id,
+    {
+      title: selectedCard.value.title,
+      description: selectedCard.value.description
+    }
+  )
+
+  // UI-update in columns[]
+  const col = columns.value.find(c => c.id === cardColumnId.value)
+  if (col) {
+    const index = col.cards.findIndex(c => c.id === selectedCard.value.id)
+    if (index !== -1) col.cards[index] = updated
+  }
+
+  showEditModal.value = false
 }
 
 function deleteColumn(columnId) {
