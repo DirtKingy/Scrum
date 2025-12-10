@@ -30,6 +30,7 @@ export const useCardsStore = defineStore('cards', () => {
     const toast = useToastStore()
     if (!checkTitleLength(title)) {
       toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
+      return
     }
 
     const maxPos = cardsByColumn.value[columnId]?.reduce(
@@ -52,6 +53,7 @@ export const useCardsStore = defineStore('cards', () => {
     const toast = useToastStore()
     if (updates.title && !checkTitleLength(updates.title)) {
       toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
+      return
     }
 
     const { data, error } = await supabase
