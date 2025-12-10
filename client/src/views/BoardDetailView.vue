@@ -2,7 +2,9 @@
   <main class="min-h-screen bg-gray-900 text-gray-100 font-sans p-6">
     <BoardHeader :board="board" @new-column="openNewColumnModal" />
 
-    <div class="flex space-x-4">
+    <Toast />
+
+    <section class="flex space-x-4">
       <BoardColumn
         v-for="column in columns"
         :key="column.id"
@@ -12,7 +14,7 @@
         @delete-column="deleteColumn"
         @card-moved="onCardMoved"
       />
-    </div>
+    </section>
 
     <!-- Column modal -->
     <BaseModal v-if="showColumnModal" @close="showColumnModal = false" @confirm="createColumn" title="Nieuwe Kolom">
@@ -78,6 +80,9 @@ import BoardColumn from '../components/boards/BoardColumn.vue'
 import { useBoardsStore } from '../stores/boardsStore'
 import { useColumnsStore } from '../stores/columnsStore'
 import { useCardsStore } from '../stores/cardsStore'
+import { useToastStore } from '@/stores/useToastStore'
+import Toast from '@/components/Toast/Toast.vue'
+
 
 const route = useRoute()
 const boardsStore = useBoardsStore()
@@ -100,6 +105,8 @@ const cardColumnId = ref(null)
 // Edit modal
 const showEditModal = ref(false)
 const selectedCard = ref(null)
+
+const toast = useToastStore()
 
 async function loadBoardData() {
   const id = route.params.id

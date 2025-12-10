@@ -1,18 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../services/supabaseClient'
+import { useToastStore } from './useToastStore' // importeer de toast store
 
 export const useCardsStore = defineStore('cards', () => {
   const cardsByColumn = ref({})
 
   async function fetchCards(columnId) {
-    const { data, error } = await supabase
-      .from('cards')
-      .select('*')
-      .eq('column_id', columnId)
-      .order('position', { ascending: true })
-    if (error) throw error
-    cardsByColumn.value[columnId] = data || []
+    const toast = useToastStore()
+    try {
+      const { data, error } = await supabase
+        .from('cards')
+        .select('*')
+        .eq('column_id', columnId)
+        .order('position', { ascending: true })
+      if (error) throw error
+      cardsByColumn.value[columnId] = data || []
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon cards niet laden', type: 'error' })
+    }
   }
 
   function checkTitleLength(title) {
@@ -20,9 +27,9 @@ export const useCardsStore = defineStore('cards', () => {
   }
 
   async function createCard(columnId, title, description = '') {
+    const toast = useToastStore()
     if (!checkTitleLength(title)) {
-      alert("Exceeded the 120 title length")
-      return
+      toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
     }
 
     const maxPos = cardsByColumn.value[columnId]?.reduce(
@@ -38,12 +45,13 @@ export const useCardsStore = defineStore('cards', () => {
     if (error) throw error
     if (!cardsByColumn.value[columnId]) cardsByColumn.value[columnId] = []
     cardsByColumn.value[columnId].push(data[0])
+    toast.showToast({ message: 'Card succesvol aangemaakt', type: 'success' })
   }
 
   async function updateCard(cardId, updates) {
+    const toast = useToastStore()
     if (updates.title && !checkTitleLength(updates.title)) {
-      alert("Exceeded the 120 title length")
-      return
+      toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
     }
 
     const { data, error } = await supabase
@@ -59,6 +67,7 @@ export const useCardsStore = defineStore('cards', () => {
       const index = cardsByColumn.value[columnId].findIndex(c => c.id === cardId)
       if (index !== -1) cardsByColumn.value[columnId][index] = updated
     }
+    toast.showToast({ message: 'Card succesvol bijgewerkt', type: 'success' })
     return updated
   }
 

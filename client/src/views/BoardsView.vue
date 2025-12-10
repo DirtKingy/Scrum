@@ -6,13 +6,7 @@
       <p class="text-gray-400">Beheer je projecten en taken overzichtelijk</p>
     </header>
 
-    <!-- Error message -->
-    <p
-      v-if="boardsStore.errorMessage"
-      class="mb-6 p-4 bg-red-700/30 text-red-400 rounded shadow-sm text-center"
-    >
-      {{ boardsStore.errorMessage }}
-    </p>
+    <Toast />
 
     <!-- Create Board Form -->
     <form
@@ -108,6 +102,7 @@
 import { ref, onMounted } from 'vue'
 import { useBoardsStore } from '../stores/boardsStore'
 import BaseModal from '../components/base/BaseModal.vue'
+import Toast from '@/components/Toast/Toast.vue'
 
 const boardsStore = useBoardsStore()
 const newBoardName = ref('')
