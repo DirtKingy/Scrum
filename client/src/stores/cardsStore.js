@@ -28,47 +28,63 @@ export const useCardsStore = defineStore('cards', () => {
 
   async function createCard(columnId, title, description = '') {
     const toast = useToastStore()
-    if (!checkTitleLength(title)) {
-      toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
+    try {
+      if (!checkTitleLength(title)) {
+        toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
+        return
+      }
+
+      const maxPos = cardsByColumn.value[columnId]?.reduce(
+        (max, c) => Math.max(max, c.position ?? 0),
+        -1
+      ) ?? -1
+
+      const { data, error } = await supabase
+        .from('cards')
+        .insert([{ column_id: columnId, title, description, position: maxPos + 1 }])
+        .select()
+
+      if (error) throw error
+
+      if (!cardsByColumn.value[columnId]) cardsByColumn.value[columnId] = []
+      cardsByColumn.value[columnId].push(data[0])
+      toast.showToast({ message: 'Card succesvol aangemaakt', type: 'success' })
+
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Fout bij het aanmaken van de card', type: 'error' })
     }
-
-    const maxPos = cardsByColumn.value[columnId]?.reduce(
-      (max, c) => Math.max(max, c.position ?? 0),
-      -1
-    ) ?? -1
-
-    const { data, error } = await supabase
-      .from('cards')
-      .insert([{ column_id: columnId, title, description, position: maxPos + 1 }])
-      .select()
-
-    if (error) throw error
-    if (!cardsByColumn.value[columnId]) cardsByColumn.value[columnId] = []
-    cardsByColumn.value[columnId].push(data[0])
-    toast.showToast({ message: 'Card succesvol aangemaakt', type: 'success' })
   }
 
   async function updateCard(cardId, updates) {
     const toast = useToastStore()
-    if (updates.title && !checkTitleLength(updates.title)) {
-      toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
-    }
+    try {
+      if (updates.title && !checkTitleLength(updates.title)) {
+        toast.showToast({ message: "Exceeded the 120 title length", type: 'error' })
+        return
+      }
 
-    const { data, error } = await supabase
-      .from('cards')
-      .update(updates)
-      .eq('id', cardId)
-      .select()
-    if (error) throw error
+      const { data, error } = await supabase
+        .from('cards')
+        .update(updates)
+        .eq('id', cardId)
+        .select()
 
-    const updated = data[0]
-    const columnId = updated.column_id
-    if (cardsByColumn.value[columnId]) {
-      const index = cardsByColumn.value[columnId].findIndex(c => c.id === cardId)
-      if (index !== -1) cardsByColumn.value[columnId][index] = updated
+      if (error) throw error
+
+      const updated = data[0]
+      const columnId = updated.column_id
+      if (cardsByColumn.value[columnId]) {
+        const index = cardsByColumn.value[columnId].findIndex(c => c.id === cardId)
+        if (index !== -1) cardsByColumn.value[columnId][index] = updated
+      }
+      toast.showToast({ message: 'Card succesvol bijgewerkt', type: 'success' })
+      return updated
+
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Fout bij het bijwerken van de card', type: 'error' })
     }
-    toast.showToast({ message: 'Card succesvol bijgewerkt', type: 'success' })
-    return updated
   }
 
   async function moveCard(cardId, fromColumnId, toColumnId, newPosition) {
