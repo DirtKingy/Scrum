@@ -1,5 +1,6 @@
 <template>
   <section class="flex gap-4 overflow-x-auto pb-4">
+    <!-- Columns -->
     <BoardColumn
       v-for="col in columns"
       :key="col.id"
@@ -9,10 +10,19 @@
       @edit-card="$emit('edit-card', $event)"
       @card-moved="onCardMoved"
     />
+
+    <!-- Add new column button -->
     <button
       @click="$emit('new-column')"
-      class="bg-gray-800 text-purple-300 px-4 py-2 rounded-xl w-72 flex-shrink-0"
-    >+ Kolom toevoegen</button>
+      class="px-4 py-2 rounded-xl flex-shrink-0 font-medium transition hover:opacity-80"
+      style="
+        background-color: var(--color-surface-alt);
+        color: var(--color-accent);
+        font-family: var(--font-sans);
+      "
+    >
+      + Kolom toevoegen
+    </button>
   </section>
 </template>
 

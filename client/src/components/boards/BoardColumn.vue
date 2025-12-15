@@ -1,9 +1,21 @@
 <template>
-  <section class="bg-gray-800 rounded-xl shadow w-72 p-4 flex flex-col">
+  <section
+    class="rounded-xl shadow p-4 flex flex-col w-72"
+    style="background-color: var(--color-surface);"
+  >
     <!-- Header -->
     <header class="flex justify-between items-center mb-3">
-      <h2 class="text-lg font-semibold text-purple-300">{{ column.name }}</h2>
-      <button @click="$emit('delete-column', column.id)" class="text-red-500 hover:text-red-400">
+      <h2
+        class="text-lg font-semibold"
+        style="color: var(--color-accent); font-family: var(--font-display);"
+      >
+        {{ column.name }}
+      </h2>
+      <button
+        @click="$emit('delete-column', column.id)"
+        class="hover:opacity-80 transition"
+        style="color: var(--color-danger);"
+      >
         ✕
       </button>
     </header>
@@ -18,13 +30,20 @@
       :data-column-id="column.id"
     >
       <template #item="{ element }">
-        <BoardCard :card="element" @edit-card="$emit('edit-card', element, column.id)" />
+        <BoardCard
+          :card="element"
+          @edit-card="$emit('edit-card', element, column.id)"
+        />
       </template>
     </draggable>
 
     <!-- Footer -->
     <footer class="mt-4">
-      <button @click="$emit('add-card', column.id)" class="text-purple-400 hover:text-purple-300 text-sm font-medium">
+      <button
+        @click="$emit('add-card', column.id)"
+        class="text-sm font-medium hover:opacity-80 transition"
+        style="color: var(--color-accent-muted); font-family: var(--font-sans);"
+      >
         + Nieuwe kaart
       </button>
     </footer>

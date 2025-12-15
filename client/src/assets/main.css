@@ -1,30 +1,44 @@
 @import "tailwindcss";
+/* Google Fonts import */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
 
+/* Definieer font variabelen voor gebruik in het thema */
+:root {
+  --font-sans: 'Inter', ui-sans-serif, system-ui;       /* hoofdtekst */
+  --font-display: 'Poppins', ui-sans-serif, system-ui;  /* headers / accent tekst */
+  --font-mono: 'Fira Code', monospace;                 /* code / labels */
+}
 /* Tailwind 4: thema extensie met @theme */
 @theme {
-  /* Branding Accent (subtiel gebruikt) */
-  --color-accent: #40E0D0; /* jouw turquoise */
+  /* Branding Accent */
+  --color-accent: #40E0D0;
   --color-accent-muted: #2bbcb3;
 
-  /* Neutrale UI Basiskleuren */
-  --color-bg: #0d1117;              /* hoofdbg, diep donker */
-  --color-surface: #1a1f25;         /* kaarten/panels */
-  --color-surface-hover: #212832;
-  --color-border: #2b323b;
+  /* Neutrale UI Basiskleuren (iets lichter) */
+  --color-bg: #1a1f26;            /* lichter dan 12161c */
+  --color-surface: #252c36;       /* panelen iets lichter */
+  --color-surface-alt: #1f262f;    /* kolommen iets donkerder */
+  --color-surface-hover: #2e3644; /* subtiele hover */
+  --color-border: #3b4652;        /* zachte scheiding */
 
   /* Tekst */
-  --color-text: #f3f4f6;
-  --color-text-muted: #9ca3af;
+  --color-text: #eceff1;          /* iets minder fel dan wit */
+  --color-text-muted: #b0b8c2;    /* grijs voor secundaire tekst */
 
-  /* Interactie */
-  --color-primary-btn: #2b323b;       /* rustige neutrale buttons */
-  --color-primary-btn-hover: #353d48;
+  /* Interactie Buttons */
+  --color-primary-btn: #37424f;       /* neutraal en lichtjes lichter */
+  --color-primary-btn-hover: #434f5f; /* lichte hover */
 
-  /* States */
-  --color-danger: #ef4444;
-  --color-danger-dark: #dc2626;
-  --color-warning: #eab308;
+  /* Status kleuren */
+  --color-danger: #f88c8c;           /* zachter rood */
+  --color-danger-dark: #ef4444;      /* blijft iets intenser */
+  --color-warning: #fadd5a;          /* zacht geel */
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
 /* Basis layout styling */
@@ -37,4 +51,14 @@ html {
 
 body {
   @apply bg-[var(--color-dark-bg)] text-white;
+}
+
+/* Headers gebruiken display font */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* Monospace / code */
+code, pre, .font-mono {
+  font-family: var(--font-mono);
 }

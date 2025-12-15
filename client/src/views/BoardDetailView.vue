@@ -1,7 +1,16 @@
 <template>
-  <main class="min-h-screen bg-gray-900 text-gray-100 font-sans p-6">
-    <BoardHeader :board="board" @new-column="openNewColumnModal" />
+  <main
+    class="min-h-screen font-sans p-6"
+    style="background-color: var(--color-bg); color: var(--color-text);"
+  >
+    <!-- Board Header -->
+    <BoardHeader
+      :board="board"
+      @new-column="openNewColumnModal"
+      class="mb-8"
+    />
 
+    <!-- Columns container -->
     <div class="flex space-x-4">
       <BoardColumn
         v-for="column in columns"
@@ -11,41 +20,74 @@
         @edit-card="editCard"
         @delete-column="deleteColumn"
         @card-moved="onCardMoved"
+        class="bg-[var(--color-surface)] rounded-lg p-4 shadow hover:shadow-lg transition"
       />
     </div>
 
     <!-- Column modal -->
-    <BaseModal v-if="showColumnModal" @close="showColumnModal = false" @confirm="createColumn" title="Nieuwe Kolom">
+    <BaseModal
+      v-if="showColumnModal"
+      @close="showColumnModal = false"
+      @confirm="createColumn"
+      title="Nieuwe Kolom"
+    >
       <form @submit.prevent="createColumn" class="space-y-4">
         <input
           v-model="newColumnName"
           type="text"
           placeholder="Naam van kolom"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
+          class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition"
+          style="
+            background-color: var(--color-surface);
+            border-color: var(--color-border);
+            color: var(--color-text);
+            focus:ring-color: var(--color-accent-muted);
+            font-family: var(--font-sans);
+          "
           required
         />
       </form>
     </BaseModal>
 
     <!-- Card modal -->
-    <BaseModal v-if="showCardModal" @close="showCardModal = false" @confirm="createCard" title="Nieuwe Kaart">
+    <BaseModal
+      v-if="showCardModal"
+      @close="showCardModal = false"
+      @confirm="createCard"
+      title="Nieuwe Kaart"
+    >
       <section class="space-y-4">
         <input
           v-model="newCardTitle"
           type="text"
           placeholder="Titel van kaart"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
+          class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition"
+          style="
+            background-color: var(--color-surface);
+            border-color: var(--color-border);
+            color: var(--color-text);
+            focus:ring-color: var(--color-accent-muted);
+            font-family: var(--font-sans);
+          "
           required
         />
         <textarea
           v-model="newCardDescription"
           placeholder="Beschrijving (optioneel)"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 resize-none"
+          class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
+          style="
+            background-color: var(--color-surface);
+            border-color: var(--color-border);
+            color: var(--color-text);
+            focus:ring-color: var(--color-accent-muted);
+            font-family: var(--font-sans);
+          "
         ></textarea>
       </section>
     </BaseModal>
 
-    <BaseModal 
+    <!-- Edit Card modal -->
+    <BaseModal
       v-if="showEditModal"
       title="Kaart bewerken"
       confirm-text="Opslaan"
@@ -58,17 +100,30 @@
           v-model="selectedCard.title"
           type="text"
           placeholder="Titel van kaart"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
+          class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition"
+          style="
+            background-color: var(--color-surface);
+            border-color: var(--color-border);
+            color: var(--color-text);
+            focus:ring-color: var(--color-accent-muted);
+            font-family: var(--font-sans);
+          "
           required
         />
         <textarea
           v-model="selectedCard.description"
           placeholder="Beschrijving (optioneel)"
-          class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 resize-none"
+          class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
+          style="
+            background-color: var(--color-surface);
+            border-color: var(--color-border);
+            color: var(--color-text);
+            focus:ring-color: var(--color-accent-muted);
+            font-family: var(--font-sans);
+          "
         ></textarea>
       </section>
     </BaseModal>
-
   </main>
 </template>
 
@@ -99,6 +154,10 @@ const showCardModal = ref(false)
 const newCardTitle = ref('')
 const newCardDescription = ref('')
 const cardColumnId = ref(null)
+
+// Edit Card modal
+const showEditModal = ref(false)
+const selectedCard = ref({})
 
 async function loadBoardData() {
   const id = route.params.id
@@ -169,8 +228,8 @@ async function createCard() {
 }
 
 function editCard(card) {
-  selectedCard.value = card;
-  showEditModal.value = true;
+  selectedCard.value = card
+  showEditModal.value = true
 }
 
 function deleteColumn(columnId) {
