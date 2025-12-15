@@ -64,6 +64,7 @@
         <textarea
           v-model="selectedCard.description"
           class="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100"
+          title="description"
         ></textarea>
       </section>
     </BaseModal>
