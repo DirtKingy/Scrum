@@ -4,32 +4,39 @@
     style="background-color: var(--color-bg); color: var(--color-text);"
   >
     <!-- Board Header -->
+    <!-- Header -->
     <BoardHeader
       :board="board"
-      @new-column="openNewColumnModal"
+      @new-column="showColumnModal = true"
       class="mb-8"
     />
 
-    <!-- Columns container -->
-    <div class="flex space-x-4">
+    <Toast />
+
+    <section class="flex space-x-4">
       <BoardColumn
         v-for="column in columns"
         :key="column.id"
         :column="column"
         @add-card="openNewCardModal"
-        @edit-card="editCard"
+        @edit-card="openEditCardModal"
         @delete-column="deleteColumn"
         @card-moved="onCardMoved"
         class="bg-[var(--color-surface)] rounded-lg p-4 shadow hover:shadow-lg transition"
       />
-    </div>
+    </section>
 
     <!-- Column modal -->
     <BaseModal
+     
       v-if="showColumnModal"
-      @close="showColumnModal = false"
-      @confirm="createColumn"
+     
       title="Nieuwe Kolom"
+      @close="showColumnModal = false"
+     
+      @confirm="createColumn"
+     
+    
     >
       <form @submit.prevent="createColumn" class="space-y-4">
         <input
@@ -58,7 +65,7 @@
     >
       <section class="space-y-4">
         <input
-          v-model="newCardTitle"
+          v-model="selectedCard.title"
           type="text"
           placeholder="Titel van kaart"
           class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition"
@@ -72,7 +79,7 @@
           required
         />
         <textarea
-          v-model="newCardDescription"
+          v-model="selectedCard.description"
           placeholder="Beschrijving (optioneel)"
           class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
           style="
@@ -90,10 +97,8 @@
     <BaseModal
       v-if="showEditModal"
       title="Kaart bewerken"
-      confirm-text="Opslaan"
-      cancel-text="Annuleren"
-      @close="closeModal"
-      @confirm="confirmEdit"
+      @close="showEditModal = false"
+      @confirm="saveEditedCard"
     >
       <section class="space-y-4">
         <input
@@ -128,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseModal from '../components/base/BaseModal.vue'
 import BoardHeader from '../components/boards/BoardHeader.vue'
@@ -136,115 +141,94 @@ import BoardColumn from '../components/boards/BoardColumn.vue'
 import { useBoardsStore } from '../stores/boardsStore'
 import { useColumnsStore } from '../stores/columnsStore'
 import { useCardsStore } from '../stores/cardsStore'
+import { useToastStore } from '@/stores/useToastStore'
+import Toast from '@/components/Toast/Toast.vue'
 
-const route = useRoute()
+
+// --- Stores ---
 const boardsStore = useBoardsStore()
 const columnsStore = useColumnsStore()
 const cardsStore = useCardsStore()
 
-const board = ref(null)
-const columns = ref([])
+// --- Route ---
+const route = useRoute()
+const boardId = route.params.id
 
-// Column modal
+// --- Refs for modals ---
 const showColumnModal = ref(false)
+const showCardModal = ref(false)
+const showEditModal = ref(false)
+const selectedCard = ref({ title: '', description: '' })
 const newColumnName = ref('')
 
-// Card modal
-const showCardModal = ref(false)
-const newCardTitle = ref('')
-const newCardDescription = ref('')
-const cardColumnId = ref(null)
+// --- Computed: columns with cards ---
+const board = computed(() =>
+  boardsStore.boards.find(b => b.id === boardId)
+)
 
-// Edit Card modal
-const showEditModal = ref(false)
-const selectedCard = ref({})
-
-async function loadBoardData() {
-  const id = route.params.id
-
-  await boardsStore.fetchBoards()
-  board.value = boardsStore.boards.find(b => b.id === id)
-
-  if (!board.value) return
-
-  // Haal kolommen op
-  await columnsStore.fetchColumns(id)
-
-  for (const col of columnsStore.columns) {
-    await cardsStore.fetchCards(col.id)
-  }
-  
-  // Kolommen + kaarten samenvoegen
-  const merged = (columnsStore.columns || []).map(col => ({
+const columns = computed(() =>
+  columnsStore.columns.map(col => ({
     ...col,
     cards: cardsStore.cardsByColumn[col.id] || []
   }))
+)
 
-  columns.value = merged
+// --- Load initial data ---
+async function loadBoardData() {
+  await boardsStore.fetchBoards()
+  await columnsStore.fetchColumns(boardId)
+  for (const col of columnsStore.columns) {
+    await cardsStore.fetchCards(col.id)
+  }
 }
 
-onMounted(async () => {
-  await loadBoardData()
-})
+onMounted(loadBoardData)
 
-// -------- Column actions --------
-function openNewColumnModal() {
-  showColumnModal.value = true
-}
-
+// --- Column actions ---
 async function createColumn() {
   if (!newColumnName.value) return
-
-  await columnsStore.createColumn(board.value.id, newColumnName.value)
+  await columnsStore.createColumn(boardId, newColumnName.value)
   newColumnName.value = ''
   showColumnModal.value = false
-
-  await loadBoardData()
-}
-
-// -------- Card actions --------
-function openNewCardModal(columnId) {
-  cardColumnId.value = columnId
-  newCardTitle.value = ''
-  newCardDescription.value = ''
-  showCardModal.value = true
-}
-
-async function createCard() {
-  if (!newCardTitle.value) return
-
-  const created = await cardsStore.createCard(
-    cardColumnId.value,
-    newCardTitle.value,
-    newCardDescription.value
-  )
-
-  showCardModal.value = false
-  newCardTitle.value = ''
-  newCardDescription.value = ''
-
-  const col = columns.value.find(c => c.id === cardColumnId.value)
-  if (col) col.cards.push(created)
-}
-
-function editCard(card) {
-  selectedCard.value = card
-  showEditModal.value = true
 }
 
 function deleteColumn(columnId) {
   if (!confirm('Kolom verwijderen?')) return
   columnsStore.deleteColumn(columnId)
-  columns.value = columns.value.filter(c => c.id !== columnId)
 }
 
-// -------- Drag & Drop --------
-function onCardMoved({ cardId, fromColumnId, toColumnId, oldIndex, newIndex }) {
-  const fromCol = columns.value.find(c => c.id === fromColumnId)
-  const toCol = columns.value.find(c => c.id === toColumnId)
-  if (!fromCol || !toCol) return
+// --- Card actions ---
+function openNewCardModal(columnId) {
+  selectedCard.value = { title: '', description: '', column_id: columnId }
+  showCardModal.value = true
+}
 
-  const [movedCard] = fromCol.cards.splice(oldIndex, 1)
-  toCol.cards.splice(newIndex, 0, movedCard)
+async function createCard() {
+  if (!selectedCard.value.title) return
+  await cardsStore.createCard(
+    selectedCard.value.column_id,
+    selectedCard.value.title,
+    selectedCard.value.description
+  )
+  showCardModal.value = false
+}
+
+function openEditCardModal(card, columnId) {
+  selectedCard.value = { ...card, column_id: columnId }
+  showEditModal.value = true
+}
+
+async function saveEditedCard() {
+  if (!selectedCard.value.id) return
+  await cardsStore.updateCard(selectedCard.value.id, {
+    title: selectedCard.value.title,
+    description: selectedCard.value.description
+  })
+  showEditModal.value = false
+}
+
+// --- Drag & Drop ---
+async function onCardMoved({ cardId, fromColumnId, toColumnId, oldIndex, newIndex }) {
+  await cardsStore.moveCard(cardId, fromColumnId, toColumnId, oldIndex, newIndex)
 }
 </script>

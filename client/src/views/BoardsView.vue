@@ -13,18 +13,7 @@
       </p>
     </header>
 
-    <!-- Error message -->
-    <p
-      v-if="boardsStore.errorMessage"
-      class="mb-6 p-4 rounded-lg shadow text-center border"
-      style="
-        background-color: var(--color-danger-dark);
-        border-color: var(--color-danger);
-        color: white;
-      "
-    >
-      {{ boardsStore.errorMessage }}
-    </p>
+    <Toast />
 
     <!-- Create Board Form -->
     <form
@@ -155,6 +144,7 @@
 import { ref, onMounted } from 'vue'
 import { useBoardsStore } from '../stores/boardsStore'
 import BaseModal from '../components/base/BaseModal.vue'
+import Toast from '@/components/Toast/Toast.vue'
 
 const boardsStore = useBoardsStore()
 const newBoardName = ref('')
