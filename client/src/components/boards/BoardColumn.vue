@@ -39,7 +39,7 @@
     <footer class="mt-4">
       <button
         @click="$emit('add-card', column.id)"
-        class="text-sm font-medium hover:opacity-80 transition"
+        class="text-base font-medium hover:opacity-80 transition"
         style="color: var(--color-accent-muted); font-family: var(--font-sans);"
       >
         + Nieuwe kaart

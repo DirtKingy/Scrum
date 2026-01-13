@@ -18,7 +18,7 @@
       </h1>
       <p
         v-if="board"
-        class="mt-1 text-sm"
+        class="mt-1 text-base"
         style="color: var(--color-text-muted); font-family: var(--font-sans);"
       >
         Gemaakt op {{ formatDate(board.created_at) }}

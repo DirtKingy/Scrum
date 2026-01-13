@@ -66,7 +66,7 @@
           {{ board.name }}
         </RouterLink>
 
-        <footer class="mt-auto flex justify-between items-center text-sm">
+        <footer class="mt-auto flex justify-between items-center text-base">
           <small style="color: var(--color-text-muted)">
             Gemaakt: {{ formatDate(board.created_at) }}
           </small>
@@ -74,7 +74,7 @@
           <section class="flex gap-3">
             <button
               @click="openEditModal(board)"
-              class="px-3 py-1.5 rounded-md transition text-sm font-medium border"
+              class="px-3 py-1.5 rounded-md transition text-base font-medium border"
               style="
                 background-color: var(--color-primary-btn);
                 border-color: var(--color-border);
@@ -86,7 +86,7 @@
 
             <button
               @click="openDeleteModal(board)"
-              class="px-3 py-1.5 rounded-md transition text-sm font-medium"
+              class="px-3 py-1.5 rounded-md transition text-base font-medium"
               style="
                 background-color: var(--color-danger-dark);
                 color: white;

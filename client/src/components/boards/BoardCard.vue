@@ -12,7 +12,7 @@
     </h3>
     <p
       v-if="card.description"
-      class="text-sm mt-1"
+      class="text-base mt-1"
       style="color: var(--color-text-muted); font-family: var(--font-sans);"
     >
       {{ card.description }}
