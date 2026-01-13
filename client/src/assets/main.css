@@ -15,6 +15,7 @@
   /* Branding Accent */
   --color-accent: #40E0D0;
   --color-accent-muted: #2bbcb3;
+  --color-highlight: #d4a656;
 
   /* Neutrale UI Basiskleuren (iets lichter) */
   --color-bg: #1a1f26;            /* lichter dan 12161c */
@@ -35,6 +36,8 @@
   --color-danger: #f88c8c;           /* zachter rood */
   --color-danger-dark: #ef4444;      /* blijft iets intenser */
   --color-warning: #fadd5a;          /* zacht geel */
+
+  --color-toast-success: #4f9f6f;
 
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);

@@ -19,7 +19,7 @@ const toastStore = useToastStore()
 
 const toastClass = (type) => {
   switch (type) {
-    case 'success': return 'bg-green-500'
+    case 'success': return 'bg-[var(--color-toast-success)]'
     case 'error': return 'bg-red-500'
     case 'warning': return 'bg-yellow-500 text-black'
     default: return 'bg-blue-500'
