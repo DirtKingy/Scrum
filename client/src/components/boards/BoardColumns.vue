@@ -5,15 +5,16 @@
       v-for="col in columns"
       :key="col.id"
       :column="col"
-      @add-card="$emit('add-card', col.id)"
-      @delete-column="$emit('delete-column', col.id)"
-      @edit-card="$emit('edit-card', $event)"
-      @card-moved="onCardMoved"
+      :board-id="boardId"
+      @add-card="boardsStore.openNewCardModal(col.id)"
+      @delete-column="boardsStore.deleteColumn(boardId, col.id)"
+      @edit-card="boardsStore.openEditCardModal($event, col.id)"
+      @card-moved="boardsStore.moveCard(boardId, $event.cardId, $event.fromColumnId, $event.toColumnId, $event.newIndex)"
     />
 
     <!-- Add new column button -->
     <button
-      @click="$emit('new-column')"
+      @click="emit('new-column')"
       class="px-4 py-2 rounded-xl flex-shrink-0 font-medium transition hover:opacity-80"
       style="
         background-color: var(--color-surface-alt);
@@ -28,11 +29,13 @@
 
 <script setup>
 import BoardColumn from './BoardColumn.vue'
+import { useBoardsStore } from '@/stores/boardsStore'
 
-defineProps({ columns: Array })
-const emit = defineEmits(['add-card','delete-column','edit-card','new-column','card-moved'])
+defineProps({
+  columns: Array,
+  boardId: String
+})
 
-function onCardMoved(event) {
-  emit('card-moved', event)
-}
+const emit = defineEmits(['new-column'])
+const boardsStore = useBoardsStore()
 </script>

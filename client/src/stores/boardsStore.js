@@ -1,72 +1,210 @@
 import { defineStore } from 'pinia'
-import { supabase } from '../services/supabaseClient'
-import { useToastStore } from './useToastStore' // importeer de toast store
+import { ref, computed } from 'vue'
+import * as boardService from '@/services/boardService'
+import { useToastStore } from '@/stores/useToastStore'
 
-export const useBoardsStore = defineStore('boards', {
-  state: () => ({
-    boards: []
-  }),
-  actions: {
-    async fetchBoards() {
-      const toast = useToastStore()
-      try {
-        const { data, error } = await supabase
-          .from('boards')
-          .select('*')
-          .order('updated_at', { ascending: false })
-        if (error) throw error
-        this.boards = data
-      } catch (err) {
-        console.error(err)
-        toast.showToast({ message: 'Kon boards niet laden', type: 'error' })
-      }
-    },
+export const useBoardsStore = defineStore('boards', () => {
+  const boards = ref([])
+  const toast = useToastStore()
 
-    async createBoard(name) {
-      const toast = useToastStore()
-      try {
-        const { data, error } = await supabase
-          .from('boards')
-          .insert([{ name }])
-          .select()
-        if (error) throw error
-        this.boards.push(data[0])
-        toast.showToast({ message: 'Board succesvol aangemaakt', type: 'success' })
-      } catch (err) {
-        console.error('Kon board niet aanmaken:', err)
-        toast.showToast({ message: 'Kon board niet aanmaken: ' + (err.message || err.details), type: 'error' })
-      }
-    },
+  // -------------------- HELPERS --------------------
+  function findBoard(boardId) {
+    return boards.value.find(b => b.id === boardId)
+  }
+  function findColumn(boardId, columnId) {
+    const board = findBoard(boardId)
+    return board?.columns.find(c => c.id === columnId)
+  }
 
-    async updateBoard(id, newName) {
-      const toast = useToastStore()
-      try {
-        const { data, error } = await supabase
-          .from('boards')
-          .update({ name: newName, updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .select()
-        if (error) throw error
-        const index = this.boards.findIndex(b => b.id === id)
-        if (index !== -1) this.boards[index].name = newName
-        toast.showToast({ message: 'Board succesvol bijgewerkt', type: 'success' })
-      } catch (err) {
-        console.error(err)
-        toast.showToast({ message: 'Kon board niet updaten', type: 'error' })
+  // -------------------- GETTERS --------------------
+  const getBoardById = (boardId) => computed(() => findBoard(boardId))
+  const getColumnsByBoard = (boardId) => computed(() => findBoard(boardId)?.columns || [])
+  const getCardsByColumn = (columnId) =>
+    computed(() => {
+      for (const board of boards.value) {
+        const col = board.columns.find(c => c.id === columnId)
+        if (col) return col.cards
       }
-    },
+      return []
+    })
 
-    async deleteBoard(id) {
-      const toast = useToastStore()
-      try {
-        const { error } = await supabase.from('boards').delete().eq('id', id)
-        if (error) throw error
-        this.boards = this.boards.filter(b => b.id !== id)
-        toast.showToast({ message: 'Board succesvol verwijderd', type: 'success' })
-      } catch (err) {
-        console.error(err)
-        toast.showToast({ message: 'Kon board niet verwijderen', type: 'error' })
-      }
+  // -------------------- BOARDS --------------------
+  async function fetchBoards() {
+    try {
+      const data = await boardService.getBoards()
+      boards.value = data.map(b => ({ ...b, columns: [] }))
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon boards niet laden', type: 'error' })
     }
+  }
+
+  async function createBoard(name) {
+    if (!name) return
+    try {
+      const board = await boardService.createBoard(name)
+      boards.value.push({ ...board, columns: [] })
+      toast.showToast({ message: 'Board aangemaakt', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon board niet aanmaken', type: 'error' })
+    }
+  }
+
+  async function updateBoard(id, name) {
+    if (!name) return
+    try {
+      const board = await boardService.updateBoard(id, { name })
+      const index = boards.value.findIndex(b => b.id === id)
+      if (index !== -1) boards.value[index].name = name
+      toast.showToast({ message: 'Board bijgewerkt', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon board niet updaten', type: 'error' })
+    }
+  }
+
+  async function deleteBoard(id) {
+    try {
+      await boardService.deleteBoard(id)
+      boards.value = boards.value.filter(b => b.id !== id)
+      toast.showToast({ message: 'Board verwijderd', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon board niet verwijderen', type: 'error' })
+    }
+  }
+
+  // -------------------- COLUMNS --------------------
+  async function fetchColumns(boardId) {
+    try {
+      const board = findBoard(boardId)
+      if (!board) return
+      const data = await boardService.fetchColumns(boardId)
+      board.columns = data.map(c => ({ ...c, cards: [] }))
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon kolommen niet laden', type: 'error' })
+    }
+  }
+
+  async function createColumn(boardId, name) {
+    if (!name) return
+    try {
+      const board = findBoard(boardId)
+      if (!board) return
+      const col = await boardService.createColumn(boardId, name)
+      board.columns.push({ ...col, cards: [] })
+      toast.showToast({ message: 'Kolom aangemaakt', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon kolom niet aanmaken', type: 'error' })
+    }
+  }
+
+  async function updateColumn(boardId, columnId, name) {
+    if (!name) return
+    try {
+      await boardService.updateColumn(columnId, { name })
+      const col = findColumn(boardId, columnId)
+      if (col) col.name = name
+      toast.showToast({ message: 'Kolom bijgewerkt', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon kolom niet updaten', type: 'error' })
+    }
+  }
+
+  async function deleteColumn(boardId, columnId) {
+    try {
+      await boardService.deleteColumn(columnId)
+      const board = findBoard(boardId)
+      if (board) board.columns = board.columns.filter(c => c.id !== columnId)
+      toast.showToast({ message: 'Kolom verwijderd', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon kolom niet verwijderen', type: 'error' })
+    }
+  }
+
+  // -------------------- CARDS --------------------
+  async function fetchCards(boardId, columnId) {
+    try {
+      const col = findColumn(boardId, columnId)
+      if (!col) return
+      col.cards = await boardService.fetchCards(columnId)
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon kaarten niet laden', type: 'error' })
+    }
+  }
+
+  async function createCard(boardId, columnId, { title, description }) {
+    try {
+      const col = findColumn(boardId, columnId)
+      if (!col) return
+      const card = await boardService.createCard(columnId, { title, description })
+      col.cards.push(card)
+      toast.showToast({ message: 'Card aangemaakt', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon card niet aanmaken', type: 'error' })
+    }
+  }
+
+  async function updateCard(boardId, columnId, cardId, updates) {
+    try {
+      const col = findColumn(boardId, columnId)
+      if (!col) return
+      const card = await boardService.updateCard(cardId, updates)
+      const index = col.cards.findIndex(c => c.id === cardId)
+      if (index !== -1) col.cards[index] = card
+      toast.showToast({ message: 'Card bijgewerkt', type: 'success' })
+    } catch (err) {
+      console.error(err)
+      toast.showToast({ message: 'Kon card niet updaten', type: 'error' })
+    }
+  }
+
+  async function moveCard(boardId, cardId, fromColumnId, toColumnId, newIndex) {
+    const fromCol = findColumn(boardId, fromColumnId)
+    const toCol = findColumn(boardId, toColumnId)
+    if (!fromCol || !toCol) return
+
+    const cardIndex = fromCol.cards.findIndex(c => c.id === cardId)
+    if (cardIndex === -1) return
+    const [card] = fromCol.cards.splice(cardIndex, 1)
+    toCol.cards.splice(newIndex, 0, card)
+    card.column_id = toColumnId
+
+    // Renumber positions
+    const renumber = (cards) => cards.forEach((c, i) => (c.position = i))
+    renumber(fromCol.cards)
+    renumber(toCol.cards)
+
+    try {
+      await boardService.updateCardPositions([...fromCol.cards, ...toCol.cards])
+    } catch (err) {
+      console.error('Kon posities niet bijwerken', err)
+    }
+  }
+
+  return {
+    boards,
+    getBoardById,
+    getColumnsByBoard,
+    getCardsByColumn,
+    fetchBoards,
+    createBoard,
+    updateBoard,
+    deleteBoard,
+    fetchColumns,
+    createColumn,
+    updateColumn,
+    deleteColumn,
+    fetchCards,
+    createCard,
+    updateCard,
+    moveCard
   }
 })

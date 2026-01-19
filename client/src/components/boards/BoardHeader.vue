@@ -28,7 +28,7 @@
     <!-- Right section: add new column button -->
     <section>
       <button
-        @click="$emit('new-column')"
+        @click="boardsStore.openNewColumnModal(board.id)"
         class="px-4 py-2 rounded-lg shadow font-semibold transition hover:opacity-80"
         style="
           background-color: var(--color-primary-btn);
@@ -44,9 +44,15 @@
 
 <script setup>
 import { RouterLink } from 'vue-router'
-defineProps({ board: Object })
-const emit = defineEmits(['new-column'])
+import { useBoardsStore } from '@/stores/boardsStore'
 
+// Props
+defineProps({ board: Object })
+
+// Store
+const boardsStore = useBoardsStore()
+
+// Helper
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('nl-NL', {
     year: 'numeric',

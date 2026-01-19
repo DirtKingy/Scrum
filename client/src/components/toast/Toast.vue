@@ -1,16 +1,16 @@
 <template>
-  <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center gap-2">
-    <transition-group name="toast" tag="div">
-      <div
+  <section class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+    <transition-group name="toast" tag="section">
+      <section
         v-for="toast in toastStore.toasts"
         :key="toast.id"
         :class="toastClass(toast.type)"
         class="px-6 py-3 rounded-lg shadow-lg text-white min-w-[200px] text-center"
       >
         {{ toast.message }}
-      </div>
+      </section>
     </transition-group>
-  </div>
+  </section>
 </template>
 
 <script setup>
