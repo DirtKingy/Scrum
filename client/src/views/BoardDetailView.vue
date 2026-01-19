@@ -17,6 +17,7 @@
         v-for="col in boardColumns"
         :key="col.id"
         :column="col"
+        :board-id="board.id"
         @add-card="openNewCardModal"
         @edit-card="openEditCardModal"
         @delete-column="deleteColumn"
@@ -24,7 +25,7 @@
       />
     </section>
 
-    <!-- Column modal -->
+    <!-- Column Modal -->
     <BaseModal
       v-if="showColumnModal"
       title="Nieuwe Kolom"
@@ -40,7 +41,7 @@
       />
     </BaseModal>
 
-    <!-- Card modal -->
+    <!-- Card Modal -->
     <BaseModal
       v-if="showCardModal"
       title="Nieuwe Kaart"
@@ -63,7 +64,7 @@
       ></textarea>
     </BaseModal>
 
-    <!-- Edit Card modal -->
+    <!-- Edit Card Modal -->
     <BaseModal
       v-if="showEditModal"
       title="Kaart bewerken"

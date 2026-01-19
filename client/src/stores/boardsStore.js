@@ -173,17 +173,31 @@ export const useBoardsStore = defineStore('boards', () => {
 
     const cardIndex = fromCol.cards.findIndex(c => c.id === cardId)
     if (cardIndex === -1) return
+
     const [card] = fromCol.cards.splice(cardIndex, 1)
     toCol.cards.splice(newIndex, 0, card)
     card.column_id = toColumnId
 
-    // Renumber positions
-    const renumber = (cards) => cards.forEach((c, i) => (c.position = i))
+    const renumber = (cards) => {
+      cards.forEach((c, i) => {
+        if (!c.id) throw new Error('Card missing ID during move')
+        c.position = i
+      })
+    }
     renumber(fromCol.cards)
     renumber(toCol.cards)
 
+    // Only update cards that exist in Supabase
+    const payload = [...fromCol.cards, ...toCol.cards]
+      .filter(c => c.id) // ignore new cards
+      .map(c => ({
+        id: c.id,
+        position: c.position,
+        column_id: c.column_id
+      }))
+
     try {
-      await boardService.updateCardPositions([...fromCol.cards, ...toCol.cards])
+      if (payload.length) await boardService.updateCardPositions(payload)
     } catch (err) {
       console.error('Kon posities niet bijwerken', err)
     }

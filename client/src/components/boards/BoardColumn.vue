@@ -49,7 +49,7 @@
       <template #item="{ element }">
         <BoardCard
           :card="element"
-          :board-id="column.board_id"
+          :board-id="props.boardId"
           :column-id="column.id"
           @edit-card="$emit('edit-card', element, column.id)"
         />
@@ -74,7 +74,10 @@ import draggable from 'vuedraggable'
 import BoardCard from './BoardCard.vue'
 import { useBoardsStore } from '@/stores/boardsStore'
 
-const props = defineProps({ column: Object })
+const props = defineProps({
+  column: { type: Object, required: true },
+  boardId: { type: String, required: true }
+})
 const emit = defineEmits(['add-card', 'edit-card', 'card-moved'])
 
 const store = useBoardsStore()
@@ -103,13 +106,13 @@ async function saveEdit() {
   }
 
   // ✅ BoardStore is leidend
-  await store.updateColumn(props.column.id, trimmed)
+  await store.updateColumn(props.boardId, props.column.id, trimmed)
   editing.value = false
 }
 
 async function deleteColumn() {
   if (!confirm('Kolom verwijderen?')) return
-  await store.deleteColumn(props.column.id)
+  await store.deleteColumn(props.boardId, props.column.id)
 }
 
 function onDragEnd(evt) {
@@ -118,7 +121,6 @@ function onDragEnd(evt) {
   const fromColumnId = from.dataset.columnId
   const toColumnId = to.dataset.columnId
 
-  // ✅ BoardStore update
-  store.moveCard(cardId, fromColumnId, toColumnId, newIndex)
+  store.moveCard(props.boardId, cardId, fromColumnId, toColumnId, newIndex)
 }
 </script>

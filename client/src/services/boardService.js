@@ -117,12 +117,19 @@ export async function deleteCard(id) {
 }
 
 export async function updateCardPositions(cards) {
-  const updates = cards.map(c => ({
-    id: c.id,
-    position: c.position,
-    column_id: c.column_id
-  }))
-  const { error } = await supabase.from('cards').upsert(updates)
-  if (error) throw error
-  return true
+  try {
+    for (const c of cards) {
+      if (!c.id) continue
+      const { error } = await supabase
+        .from('cards')
+        .update({ position: c.position, column_id: c.column_id })
+        .eq('id', c.id)
+
+      if (error) throw error
+    }
+    return true
+  } catch (err) {
+    console.error('Kon posities niet bijwerken', err)
+    throw err
+  }
 }

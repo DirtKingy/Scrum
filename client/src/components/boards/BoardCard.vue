@@ -5,27 +5,26 @@
     :style="cardStyle"
   >
     <h3 :style="titleStyle">{{ card.title }}</h3>
-    <p v-if="card.description" :style="descStyle">{{ card.description }}</p>
+    <p v-if="card.description" :style="descStyle">
+      {{ card.description }}
+    </p>
   </article>
 </template>
 
 <script setup>
-import { useBoardsStore } from '@/stores/boardsStore'
+// Emits
+const emit = defineEmits(['edit-card'])
 
 // Props
 const props = defineProps({
   card: { type: Object, required: true },
   boardId: { type: String, required: true },
-  columnId: { type: String, required: true },
-  onEdit: { type: Function } // callback naar parent als je wilt
+  columnId: { type: String, required: true }
 })
-
-// Store
-const boardsStore = useBoardsStore()
 
 // Methods
 function editCard() {
-  if (props.onEdit) props.onEdit(props.card, props.columnId)
+  emit('edit-card', props.card, props.columnId)
 }
 
 // Styles

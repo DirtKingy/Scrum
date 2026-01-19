@@ -1,6 +1,5 @@
 <template>
   <header class="mb-8 flex justify-between items-center">
-    <!-- Left section: back link + board info -->
     <section>
       <RouterLink
         to="/"
@@ -16,6 +15,7 @@
       >
         {{ board?.name || 'Board laden...' }}
       </h1>
+
       <p
         v-if="board"
         class="mt-1 text-base"
@@ -25,10 +25,9 @@
       </p>
     </section>
 
-    <!-- Right section: add new column button -->
     <section>
       <button
-        @click="boardsStore.openNewColumnModal(board.id)"
+        @click="$emit('new-column')"
         class="px-4 py-2 rounded-lg shadow font-semibold transition hover:opacity-80"
         style="
           background-color: var(--color-primary-btn);
@@ -44,15 +43,10 @@
 
 <script setup>
 import { RouterLink } from 'vue-router'
-import { useBoardsStore } from '@/stores/boardsStore'
 
-// Props
 defineProps({ board: Object })
+defineEmits(['new-column'])
 
-// Store
-const boardsStore = useBoardsStore()
-
-// Helper
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('nl-NL', {
     year: 'numeric',
