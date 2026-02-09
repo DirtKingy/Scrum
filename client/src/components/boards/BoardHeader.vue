@@ -1,6 +1,5 @@
 <template>
   <header class="mb-8 flex justify-between items-center">
-    <!-- Left section: back link + board info -->
     <section>
       <RouterLink
         to="/"
@@ -16,6 +15,7 @@
       >
         {{ board?.name || 'Board laden...' }}
       </h1>
+
       <p
         v-if="board"
         class="mt-1 text-base"
@@ -25,7 +25,6 @@
       </p>
     </section>
 
-    <!-- Right section: add new column button -->
     <section>
       <button
         @click="$emit('new-column')"
@@ -44,8 +43,9 @@
 
 <script setup>
 import { RouterLink } from 'vue-router'
+
 defineProps({ board: Object })
-const emit = defineEmits(['new-column'])
+defineEmits(['new-column'])
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('nl-NL', {

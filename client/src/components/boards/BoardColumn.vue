@@ -3,6 +3,7 @@
     class="rounded-xl shadow p-4 flex flex-col w-72"
     style="background-color: var(--color-surface);"
   >
+    <!-- Column header -->
     <header class="flex justify-between items-center mb-3">
       <h2
         v-if="!editing"
@@ -28,7 +29,7 @@
       />
 
       <button
-        @click="columnsStore.deleteColumn(column.id)"
+        @click="deleteColumn"
         class="hover:opacity-80 transition"
         style="color: var(--color-danger);"
       >
@@ -36,6 +37,7 @@
       </button>
     </header>
 
+    <!-- Cards drag & drop -->
     <draggable
       v-model="column.cards"
       group="cards"
@@ -45,12 +47,12 @@
       :data-column-id="column.id"
     >
       <template #item="{ element }">
-        <article>
-          <BoardCard
-            :card="element"
-            @edit-card="$emit('edit-card', element, column.id)"
-          />
-        </article>
+        <BoardCard
+          :card="element"
+          :board-id="props.boardId"
+          :column-id="column.id"
+          @edit-card="$emit('edit-card', element, column.id)"
+        />
       </template>
     </draggable>
 
@@ -68,28 +70,26 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { useColumnsStore } from '@/stores/columnsStore'
 import draggable from 'vuedraggable'
 import BoardCard from './BoardCard.vue'
+import { useBoardsStore } from '@/stores/boardsStore'
 
-const props = defineProps({ column: Object })
+const props = defineProps({
+  column: { type: Object, required: true },
+  boardId: { type: String, required: true }
+})
 const emit = defineEmits(['add-card', 'edit-card', 'card-moved'])
 
-const columnsStore = useColumnsStore()
+const store = useBoardsStore()
 
+// Editing header
 const editing = ref(false)
 const name = ref(props.column.name)
 
-/**
- * Houd lokale input synchroon met store-updates
- * (voorkomt !editing glitches)
- */
 watch(
   () => props.column.name,
   newName => {
-    if (!editing.value) {
-      name.value = newName
-    }
+    if (!editing.value) name.value = newName
   }
 )
 
@@ -100,17 +100,19 @@ function startEdit() {
 
 async function saveEdit() {
   const trimmed = name.value.trim()
-
   if (!trimmed || trimmed === props.column.name) {
     editing.value = false
     return
   }
 
-  // 🔒 Store blijft leidend
-  await columnsStore.updateColumn(props.column.id, trimmed)
-
-  // pas NA succesvolle store-update
+  // ✅ BoardStore is leidend
+  await store.updateColumn(props.boardId, props.column.id, trimmed)
   editing.value = false
+}
+
+async function deleteColumn() {
+  if (!confirm('Kolom verwijderen?')) return
+  await store.deleteColumn(props.boardId, props.column.id)
 }
 
 function onDragEnd(evt) {
@@ -118,6 +120,7 @@ function onDragEnd(evt) {
   const cardId = item.__draggable_context.element.id
   const fromColumnId = from.dataset.columnId
   const toColumnId = to.dataset.columnId
-  emit('card-moved', { cardId, fromColumnId, toColumnId, oldIndex, newIndex })
+
+  store.moveCard(props.boardId, cardId, fromColumnId, toColumnId, newIndex)
 }
 </script>
