@@ -6,10 +6,9 @@
       :key="col.id"
       :column="col"
       :board-id="boardId"
-      @add-card="boardsStore.openNewCardModal(col.id)"
-      @delete-column="boardsStore.deleteColumn(boardId, col.id)"
-      @edit-card="boardsStore.openEditCardModal($event, col.id)"
-      @card-moved="boardsStore.moveCard(boardId, $event.cardId, $event.fromColumnId, $event.toColumnId, $event.newIndex)"
+
+      :on-add-card="handleAddCard"
+      :on-edit-card="handleEditCard"
     />
 
     <!-- Add new column button -->
@@ -31,11 +30,19 @@
 import BoardColumn from './BoardColumn.vue'
 import { useBoardsStore } from '@/stores/boardsStore'
 
-defineProps({
+const props = defineProps({
   columns: Array,
   boardId: String
 })
 
 const emit = defineEmits(['new-column'])
 const boardsStore = useBoardsStore()
+
+function handleAddCard(columnId) {
+  boardsStore.openNewCardModal(columnId)
+}
+
+function handleEditCard(card, columnId) {
+  boardsStore.openEditCardModal(card, columnId)
+}
 </script>

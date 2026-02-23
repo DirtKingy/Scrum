@@ -27,6 +27,11 @@ export const useBoardsStore = defineStore('boards', () => {
       }
       return []
     })
+  const sortedBoards = computed(() => {
+    return [...boards.value].sort(
+      (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+    )
+  })
 
   // -------------------- BOARDS --------------------
   async function fetchBoards() {
@@ -143,8 +148,31 @@ export const useBoardsStore = defineStore('boards', () => {
     try {
       const col = findColumn(boardId, columnId)
       if (!col) return
-      const card = await boardService.createCard(columnId, { title, description })
-      col.cards.push(card)
+
+      col.cards.forEach(c => {
+        c.position += 1
+      })
+
+      const card = await boardService.createCard(columnId, {
+        title,
+        description,
+        position: 0
+      })
+
+      col.cards.unshift(card)
+
+      const payload = col.cards
+        .filter(c => c.id)
+        .map(c => ({
+          id: c.id,
+          position: c.position,
+          column_id: c.column_id
+        }))
+
+      if (payload.length) {
+        await boardService.updateCardPositions(payload)
+      }
+
       toast.showToast({ message: 'Card aangemaakt', type: 'success' })
     } catch (err) {
       console.error(err)
@@ -205,6 +233,7 @@ export const useBoardsStore = defineStore('boards', () => {
 
   return {
     boards,
+    sortedBoards,
     getBoardById,
     getColumnsByBoard,
     getCardsByColumn,

@@ -1,14 +1,15 @@
 <template>
-  <article
-    class="p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-    @click="editCard"
-    :style="cardStyle"
-  >
-    <h3 :style="titleStyle">{{ card.title }}</h3>
-    <p v-if="card.description" :style="descStyle">
-      {{ card.description }}
-    </p>
-  </article>
+<article
+  @click="editCard"
+  class="p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+  :class="{
+    'opacity-60 scale-95': isDragging,
+    'transition-all duration-150': true
+  }"
+>
+  <h3>{{ card.title }}</h3>
+  <p v-if="card.description">{{ card.description }}</p>
+</article>
 </template>
 
 <script setup>
@@ -17,10 +18,12 @@ const emit = defineEmits(['edit-card'])
 
 // Props
 const props = defineProps({
-  card: { type: Object, required: true },
-  boardId: { type: String, required: true },
-  columnId: { type: String, required: true }
+  card: Object,
+  columnId: String,
+  boardId: String,
+  isDragging: { type: Boolean, default: false }
 })
+
 
 // Methods
 function editCard() {

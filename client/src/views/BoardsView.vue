@@ -121,7 +121,7 @@ const selectedBoard = ref(null)
 
 // --- Computed ---
 // Haal boards via getter (SSOT pattern)
-const boards = computed(() => boardsStore.boards)
+const boards = computed(() => boardsStore.sortedBoards)
 
 onMounted(() => {
   boardsStore.fetchBoards()

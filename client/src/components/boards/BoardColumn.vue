@@ -42,6 +42,7 @@
       v-model="column.cards"
       group="cards"
       item-key="id"
+      @start="dragging = true"
       @end="onDragEnd"
       class="space-y-3 flex-1 overflow-y-auto pr-1"
       :data-column-id="column.id"
@@ -51,14 +52,15 @@
           :card="element"
           :board-id="props.boardId"
           :column-id="column.id"
-          @edit-card="$emit('edit-card', element, column.id)"
+          @edit-card="props.onEditCard"
+          :is-dragging="dragging"
         />
       </template>
     </draggable>
 
     <footer class="mt-4">
       <button
-        @click="$emit('add-card', column.id)"
+        @click="props.onAddCard(column.id)"
         class="text-base font-medium hover:opacity-80 transition"
         style="color: var(--color-accent-muted); font-family: var(--font-sans);"
       >
@@ -76,15 +78,21 @@ import { useBoardsStore } from '@/stores/boardsStore'
 
 const props = defineProps({
   column: { type: Object, required: true },
-  boardId: { type: String, required: true }
+  boardId: { type: String, required: true },
+
+  // callbacks van de view
+  onEditCard: { type: Function, required: true },
+  onAddCard: { type: Function, required: true }
 })
-const emit = defineEmits(['add-card', 'edit-card', 'card-moved'])
+
+const emit = defineEmits(['card-moved'])
 
 const store = useBoardsStore()
 
 // Editing header
 const editing = ref(false)
 const name = ref(props.column.name)
+const dragging = ref(false)
 
 watch(
   () => props.column.name,
@@ -116,11 +124,11 @@ async function deleteColumn() {
 }
 
 function onDragEnd(evt) {
+  dragging.value = false
   const { item, from, to, oldIndex, newIndex } = evt
   const cardId = item.__draggable_context.element.id
   const fromColumnId = from.dataset.columnId
   const toColumnId = to.dataset.columnId
-
   store.moveCard(props.boardId, cardId, fromColumnId, toColumnId, newIndex)
 }
 </script>

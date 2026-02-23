@@ -18,10 +18,9 @@
         :key="col.id"
         :column="col"
         :board-id="board.id"
-        @add-card="openNewCardModal"
-        @edit-card="openEditCardModal"
-        @delete-column="deleteColumn"
-        @card-moved="onCardMoved"
+
+        :on-add-card="openNewCardModal"
+        :on-edit-card="openEditCardModal"
       />
     </section>
 
@@ -178,7 +177,7 @@ async function saveEditedCard() {
 }
 
 // --- Drag & Drop ---
-async function onCardMoved({ cardId, fromColumnId, toColumnId, oldIndex, newIndex }) {
-  await store.moveCard(boardId, cardId, fromColumnId, toColumnId, newIndex)
-}
+// async function onCardMoved({ cardId, fromColumnId, toColumnId, oldIndex, newIndex }) {
+//   await store.moveCard(boardId, cardId, fromColumnId, toColumnId, newIndex)
+// }
 </script>
