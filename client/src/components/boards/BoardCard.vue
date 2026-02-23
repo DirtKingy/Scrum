@@ -3,7 +3,7 @@
   @click="editCard"
   class="p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
   :class="{
-    'opacity-60 scale-95': isDragging,
+    // 'opacity-60 scale-95': isDragging,
     'transition-all duration-150': true
   }"
 >
@@ -11,6 +11,12 @@
   <p v-if="card.description">{{ card.description }}</p>
 </article>
 </template>
+
+<style>
+  .v-move {
+    transition: transform 0.2s ease;
+  }
+</style>
 
 <script setup>
 // Emits

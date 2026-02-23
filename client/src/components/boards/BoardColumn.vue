@@ -42,6 +42,9 @@
       v-model="column.cards"
       group="cards"
       item-key="id"
+      :animation="200"
+      ghost-class="drag-ghost"
+      chosen-class="drag-chosen"
       @start="dragging = true"
       @end="onDragEnd"
       class="space-y-3 flex-1 overflow-y-auto pr-1"
@@ -69,6 +72,17 @@
     </footer>
   </section>
 </template>
+
+<style>
+  .drag-ghost {
+    opacity: 0.4;
+  }
+
+  .drag-chosen {
+    transform: scale(1.03);
+    transition: transform 0.15s ease;
+  }
+</style>
 
 <script setup>
 import { ref, watch } from 'vue'
