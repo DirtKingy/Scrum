@@ -1,78 +1,79 @@
 <template>
   <main
-    class="min-h-screen font-sans p-8"
+    class="flex min-h-screen font-sans"
     :style="{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }"
   >
-    <!-- Header -->
-    <header class="mb-12 text-center">
-      <h1 class="text-4xl font-semibold mb-2">Scrum Boards</h1>
-      <p class="text-[var(--color-text-muted)] text-lg">
-        Beheer je projecten en taken overzichtelijk
-      </p>
-    </header>
 
-    <Toast />
+    <!-- Sidebar -->
+    <Sidebar
+      :boards="boards"
+      :recentBoards="recentBoards"
+      @menu="openMenu"
+    />
+    <!-- Click outside -->
+    <section
+      v-if="menuBoard"
+      class="fixed inset-0 z-40"
+      @click="closeMenu"
+    />
 
-    <!-- Create Board Form -->
-    <form
-      @submit.prevent="addBoard"
-      class="mb-10 max-w-lg mx-auto flex gap-4 items-center"
+    <!-- Menu -->
+    <section
+      v-if="menuBoard"
+      class="fixed z-50 bg-[var(--color-surface)] shadow-lg rounded-lg border w-40"
+      :style="{ top: menuY + 'px', left: menuX + 'px' }"
     >
-      <input
-        v-model="newBoardName"
-        placeholder="Nieuw board..."
-        class="flex-1 px-4 py-3 rounded-lg shadow border focus:ring-2 transition outline-none"
-        :style="inputStyle"
-        required
-      />
-      <button type="submit" class="px-6 py-3 font-medium rounded-lg transition shadow" :style="buttonStyle">
-        + Toevoegen
-      </button>
-    </form>
-
-    <!-- Boards Grid -->
-    <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <article
-        v-for="board in boards"
-        :key="board.id"
-        class="p-6 rounded-xl shadow-lg transition hover:shadow-xl flex flex-col border-l-4"
-        :style="cardStyle"
+      <button
+        @click="handleEdit"
+        class="block w-full text-left px-4 py-2 hover:bg-[var(--color-accent-muted)]"
       >
-        <RouterLink
-          :to="`/board/${board.id}`"
-          class="text-xl font-semibold mb-4 transition hover:underline underline-offset-4"
-          :style="{ color: 'var(--color-accent)' }"
+        Bewerken
+      </button>
+
+      <button
+        @click="handleDelete"
+        class="block w-full text-left px-4 py-2 text-[var(--color-danger)] hover:bg-[var(--color-danger-muted)]"
+      >
+        Verwijderen
+      </button>
+    </section>
+    <!-- Content -->
+    <section class="flex-1 p-8">
+
+      <!-- Header -->
+      <header class="mb-12 text-center">
+        <h1 class="text-4xl font-semibold mb-2">Scrum Boards</h1>
+        <p class="text-[var(--color-text-muted)] text-lg">
+          Beheer je projecten en taken overzichtelijk
+        </p>
+      </header>
+
+      <Toast />
+
+      <!-- Create Board Form -->
+      <form
+        @submit.prevent="addBoard"
+        class="mb-10 max-w-lg mx-auto flex gap-4 items-center"
+      >
+        <input
+          v-model="newBoardName"
+          placeholder="Nieuw board..."
+          class="flex-1 px-4 py-3 rounded-lg shadow border focus:ring-2 transition outline-none"
+          :style="inputStyle"
+          required
+        />
+        <button
+          type="submit"
+          class="px-6 py-3 font-medium rounded-lg transition shadow"
+          :style="buttonStyle"
         >
-          {{ board.name }}
-        </RouterLink>
+          + Toevoegen
+        </button>
+      </form>
 
-        <footer class="mt-auto flex justify-between items-center text-base">
-          <small :style="{ color: 'var(--color-text-muted)' }">
-            Gemaakt: {{ formatDate(board.created_at) }}
-          </small>
-
-          <section class="flex gap-3">
-            <button
-              @click="openEditModal(board)"
-              class="px-3 py-1.5 rounded-md transition text-base font-medium border"
-              :style="buttonStyle"
-            >
-              Bewerken
-            </button>
-
-            <button
-              @click="openDeleteModal(board)"
-              class="px-3 py-1.5 rounded-md transition text-base font-medium"
-              :style="dangerButtonStyle"
-            >
-              Verwijderen
-            </button>
-          </section>
-        </footer>
-      </article>
     </section>
 
-    <!-- Modals -->
+    <!-- Modals (exact origineel) -->
     <BaseModal
       v-if="showEditModal"
       title="Board bewerken"
@@ -81,7 +82,11 @@
       @close="closeModal"
       @confirm="confirmEdit"
     >
-      <input v-model="editBoardName" class="w-full px-3 py-3 rounded-lg border shadow outline-none focus:ring-2" :style="inputStyle" />
+      <input
+        v-model="editBoardName"
+        class="w-full px-3 py-3 rounded-lg border shadow outline-none focus:ring-2"
+        :style="inputStyle"
+      />
     </BaseModal>
 
     <BaseModal
@@ -101,33 +106,66 @@
         wilt verwijderen?
       </p>
     </BaseModal>
+
   </main>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useBoardsStore } from '@/stores/boardsStore'
+import Sidebar from '@/components/boards/Sidebar.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
 import Toast from '@/components/Toast/Toast.vue'
 
 const boardsStore = useBoardsStore()
 const newBoardName = ref('')
 
-// Modal state
+// Modal state (origineel)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 const editBoardName = ref('')
 const selectedBoard = ref(null)
 
-// --- Computed ---
-// Haal boards via getter (SSOT pattern)
+// Boards via store
 const boards = computed(() => boardsStore.sortedBoards)
+
+// Recent logica hoort hier
+const recentBoards = computed(() =>
+  [...boards.value]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 3)
+)
+
+const menuBoard = ref(null)
+const menuX = ref(0)
+const menuY = ref(0)
+
+function openMenu({ board, event }) {
+  menuBoard.value = board
+  menuX.value = event.clientX
+  menuY.value = event.clientY
+}
+
+function closeMenu() {
+  menuBoard.value = null
+}
+
+function handleEdit() {
+  openEditModal(menuBoard.value)
+  closeMenu()
+}
+
+function handleDelete() {
+  openDeleteModal(menuBoard.value)
+  closeMenu()
+}
 
 onMounted(() => {
   boardsStore.fetchBoards()
 })
 
-// --- Actions ---
+// --- Exact originele acties ---
+
 async function addBoard() {
   if (!newBoardName.value) return
   await boardsStore.createBoard(newBoardName.value)
@@ -163,36 +201,16 @@ async function confirmDelete() {
   closeModal()
 }
 
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('nl-NL', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-// --- Styles ---
+// Styles
 const inputStyle = {
   backgroundColor: 'var(--color-surface)',
   borderColor: 'var(--color-border)',
-  color: 'var(--color-text)',
-  fontFamily: 'var(--font-sans)',
-  focus: { ringColor: 'var(--color-accent-muted)' }
+  color: 'var(--color-text)'
 }
 
 const buttonStyle = {
   backgroundColor: 'var(--color-primary-btn)',
   borderColor: 'var(--color-border)',
   color: 'var(--color-text)'
-}
-
-const dangerButtonStyle = {
-  backgroundColor: 'var(--color-danger-dark)',
-  color: 'white'
-}
-
-const cardStyle = {
-  backgroundColor: 'var(--color-surface)',
-  borderColor: 'var(--color-accent-muted)'
 }
 </script>
