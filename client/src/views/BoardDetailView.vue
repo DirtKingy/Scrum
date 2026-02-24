@@ -1,8 +1,6 @@
 <template>
-  <main
-    class="min-h-screen font-sans p-6"
-    :style="{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }"
-  >
+  <main class="min-h-screen font-sans p-6"
+        :style="{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }">
     <!-- Board Header -->
     <BoardHeader
       :board="board"
@@ -12,17 +10,45 @@
 
     <Toast />
 
-    <section class="flex space-x-4" v-if="board">
+    <!-- Columns met drag & drop -->
+    <transition-group name="column" tag="div" class="flex space-x-4" v-if="board">
       <BoardColumn
         v-for="col in boardColumns"
         :key="col.id"
         :column="col"
-        :board-id="board.id"
-
         :on-add-card="openNewCardModal"
-        :on-edit-card="openEditCardModal"
+        @select-card="openCardOverlay"
       />
-    </section>
+    </transition-group>
+
+    <!-- Card Overlay -->
+    <CardDetailOverlay
+      v-if="activeCard"
+      :card="activeCard"
+      @close="closeCardOverlay"
+      @edit="openEditFromOverlay"
+    />
+
+    <!-- Edit Card Modal -->
+    <BaseModal
+      v-if="showEditModal"
+      title="Kaart bewerken"
+      @close="showEditModal = false"
+      @confirm="saveEditedCard"
+    >
+      <input
+        v-model="selectedCard.title"
+        type="text"
+        placeholder="Titel van kaart"
+        class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition"
+        required
+      />
+      <textarea
+        v-model="selectedCard.description"
+        placeholder="Beschrijving (optioneel)"
+        class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
+      ></textarea>
+    </BaseModal>
 
     <!-- Column Modal -->
     <BaseModal
@@ -40,35 +66,12 @@
       />
     </BaseModal>
 
-    <!-- Card Modal -->
+    <!-- New Card Modal -->
     <BaseModal
       v-if="showCardModal"
       title="Nieuwe Kaart"
       @close="showCardModal = false"
       @confirm="createCard"
-    >
-      <input
-        v-model="selectedCard.title"
-        type="text"
-        placeholder="Titel van kaart"
-        class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition"
-        style="background-color: var(--color-surface); border-color: var(--color-border); color: var(--color-text); font-family: var(--font-sans);"
-        required
-      />
-      <textarea
-        v-model="selectedCard.description"
-        placeholder="Beschrijving (optioneel)"
-        class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
-        style="background-color: var(--color-surface); border-color: var(--color-border); color: var(--color-text); font-family: var(--font-sans);"
-      ></textarea>
-    </BaseModal>
-
-    <!-- Edit Card Modal -->
-    <BaseModal
-      v-if="showEditModal"
-      title="Kaart bewerken"
-      @close="showEditModal = false"
-      @confirm="saveEditedCard"
     >
       <input
         v-model="selectedCard.title"
@@ -91,22 +94,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import BaseModal from '../components/base/BaseModal.vue'
 import BoardHeader from '../components/boards/BoardHeader.vue'
 import BoardColumn from '../components/boards/BoardColumn.vue'
+import CardDetailOverlay from '@/components/boards/CardDetailOverlay.vue'
+import BaseModal from '@/components/base/BaseModal.vue'
 import Toast from '@/components/Toast/Toast.vue'
 import { useBoardsStore } from '@/stores/boardsStore'
 
 const route = useRoute()
 const boardId = route.params.id
 const store = useBoardsStore()
-
-// Modals
-const showColumnModal = ref(false)
-const showCardModal = ref(false)
-const showEditModal = ref(false)
-const selectedCard = ref({ title: '', description: '', column_id: null })
-const newColumnName = ref('')
 
 // Computed
 const board = computed(() => store.getBoardById(boardId).value)
@@ -116,20 +113,26 @@ const boardColumns = computed(() =>
     cards: store.getCardsByColumn(col.id).value
   }))
 )
+const activeCard = computed(() => store.activeCard)
 
-// Load data
+// Modals
+const showColumnModal = ref(false)
+const showCardModal = ref(false)
+const showEditModal = ref(false)
+const selectedCard = ref({ title: '', description: '', column_id: null })
+const newColumnName = ref('')
+
+// Load board data
 async function loadBoardData() {
   await store.fetchBoards()
   await store.fetchColumns(boardId)
-  const columns = store.getColumnsByBoard(boardId).value
-  for (const col of columns) {
+  for (const col of store.getColumnsByBoard(boardId).value) {
     await store.fetchCards(boardId, col.id)
   }
 }
-
 onMounted(loadBoardData)
 
-// --- Column actions ---
+// Column actions
 async function createColumn() {
   if (!newColumnName.value) return
   await store.createColumn(boardId, newColumnName.value)
@@ -137,12 +140,7 @@ async function createColumn() {
   showColumnModal.value = false
 }
 
-async function deleteColumn(columnId) {
-  if (!confirm('Kolom verwijderen?')) return
-  await store.deleteColumn(boardId, columnId)
-}
-
-// --- Card actions ---
+// Card actions
 function openNewCardModal(columnId) {
   selectedCard.value = { title: '', description: '', column_id: columnId }
   showCardModal.value = true
@@ -157,8 +155,19 @@ async function createCard() {
   showCardModal.value = false
 }
 
-function openEditCardModal(card, columnId) {
-  selectedCard.value = { ...card, column_id: columnId }
+// Overlay actions
+function openCardOverlay(card) {
+  store.openCardDetail(card)
+}
+
+function closeCardOverlay() {
+  store.closeCardDetail()
+}
+
+// Edit modal vanuit overlay
+function openEditFromOverlay(card) {
+  selectedCard.value = { ...card }
+  store.closeCardDetail()
   showEditModal.value = true
 }
 
@@ -175,9 +184,16 @@ async function saveEditedCard() {
   )
   showEditModal.value = false
 }
-
-// --- Drag & Drop ---
-// async function onCardMoved({ cardId, fromColumnId, toColumnId, oldIndex, newIndex }) {
-//   await store.moveCard(boardId, cardId, fromColumnId, toColumnId, newIndex)
-// }
 </script>
+
+<style>
+.column-enter-from,
+.column-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.column-enter-active,
+.column-leave-active {
+  transition: all 0.25s ease;
+}
+</style>

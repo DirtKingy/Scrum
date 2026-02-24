@@ -33,6 +33,17 @@ export const useBoardsStore = defineStore('boards', () => {
     )
   })
 
+  // -------------------- CARD OVERLAY --------------------
+  const activeCard = ref(null) // <-- hier wordt de overlay op gebaseerd
+
+  function openCardDetail(card) {
+    activeCard.value = card
+  }
+
+  function closeCardDetail() {
+    activeCard.value = null
+  }
+
   // -------------------- BOARDS --------------------
   async function fetchBoards() {
     try {
@@ -215,9 +226,8 @@ export const useBoardsStore = defineStore('boards', () => {
     renumber(fromCol.cards)
     renumber(toCol.cards)
 
-    // Only update cards that exist in Supabase
     const payload = [...fromCol.cards, ...toCol.cards]
-      .filter(c => c.id) // ignore new cards
+      .filter(c => c.id)
       .map(c => ({
         id: c.id,
         position: c.position,
@@ -237,6 +247,9 @@ export const useBoardsStore = defineStore('boards', () => {
     getBoardById,
     getColumnsByBoard,
     getCardsByColumn,
+    activeCard,             // <-- reactive ref voor overlay
+    openCardDetail,         // <-- open overlay
+    closeCardDetail,        // <-- close overlay
     fetchBoards,
     createBoard,
     updateBoard,

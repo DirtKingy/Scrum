@@ -1,43 +1,17 @@
 <template>
-  <section
-    class="rounded-xl shadow p-4 flex flex-col w-72"
-    style="background-color: var(--color-surface);"
-  >
-    <!-- Column header -->
+  <section class="rounded-xl shadow p-4 flex flex-col w-72" style="background-color: var(--color-surface);">
     <header class="flex justify-between items-center mb-3">
-      <h2
-        v-if="!editing"
-        @click="startEdit"
-        class="text-lg font-semibold cursor-pointer"
-        style="color: var(--color-accent); font-family: var(--font-display);"
-      >
+      <h2 v-if="!editing" @click="startEdit"
+          class="text-lg font-semibold cursor-pointer"
+          style="color: var(--color-accent); font-family: var(--font-display);">
         {{ column.name }}
       </h2>
-
-      <input
-        v-else
-        v-model="name"
-        @blur="saveEdit"
-        @keyup.enter="saveEdit"
-        class="text-lg font-semibold px-1 rounded"
-        style="
-          color: var(--color-accent);
-          font-family: var(--font-display);
-          background-color: var(--color-surface);
-          border: 1px solid var(--color-border);
-        "
-      />
-
-      <button
-        @click="deleteColumn"
-        class="hover:opacity-80 transition"
-        style="color: var(--color-danger);"
-      >
-        ✕
-      </button>
+      <input v-else v-model="name" @blur="saveEdit" @keyup.enter="saveEdit"
+             class="text-lg font-semibold px-1 rounded"
+             style="color: var(--color-accent); font-family: var(--font-display); background-color: var(--color-surface); border: 1px solid var(--color-border);" />
+      <button @click="deleteColumn" class="hover:opacity-80 transition" style="color: var(--color-danger);">✕</button>
     </header>
 
-    <!-- Cards drag & drop -->
     <draggable
       v-model="column.cards"
       group="cards"
@@ -51,38 +25,24 @@
       :data-column-id="column.id"
     >
       <template #item="{ element }">
-        <BoardCard
-          :card="element"
-          :board-id="props.boardId"
-          :column-id="column.id"
-          @edit-card="props.onEditCard"
-          :is-dragging="dragging"
-        />
+        <transition name="card" mode="out-in">
+          <BoardCard
+            :key="element.id"
+            :card="element"
+            @select-card="$emit('select-card', $event)"
+          />
+        </transition>
       </template>
     </draggable>
 
     <footer class="mt-4">
-      <button
-        @click="props.onAddCard(column.id)"
-        class="text-base font-medium hover:opacity-80 transition"
-        style="color: var(--color-accent-muted); font-family: var(--font-sans);"
-      >
+      <button @click="onAddCard(column.id)" class="text-base font-medium hover:opacity-80 transition"
+              style="color: var(--color-accent-muted); font-family: var(--font-sans);">
         + Nieuwe kaart
       </button>
     </footer>
   </section>
 </template>
-
-<style>
-  .drag-ghost {
-    opacity: 0.4;
-  }
-
-  .drag-chosen {
-    transform: scale(1.03);
-    transition: transform 0.15s ease;
-  }
-</style>
 
 <script setup>
 import { ref, watch } from 'vue'
@@ -92,57 +52,44 @@ import { useBoardsStore } from '@/stores/boardsStore'
 
 const props = defineProps({
   column: { type: Object, required: true },
-  boardId: { type: String, required: true },
-
-  // callbacks van de view
-  onEditCard: { type: Function, required: true },
   onAddCard: { type: Function, required: true }
 })
-
-const emit = defineEmits(['card-moved'])
+const emit = defineEmits(['select-card', 'card-moved'])
 
 const store = useBoardsStore()
-
-// Editing header
 const editing = ref(false)
 const name = ref(props.column.name)
 const dragging = ref(false)
 
-watch(
-  () => props.column.name,
-  newName => {
-    if (!editing.value) name.value = newName
-  }
-)
+watch(() => props.column.name, n => { if(!editing.value) name.value = n })
 
-function startEdit() {
-  name.value = props.column.name
-  editing.value = true
-}
-
+function startEdit() { name.value = props.column.name; editing.value = true }
 async function saveEdit() {
   const trimmed = name.value.trim()
-  if (!trimmed || trimmed === props.column.name) {
-    editing.value = false
-    return
-  }
-
-  // ✅ BoardStore is leidend
-  await store.updateColumn(props.boardId, props.column.id, trimmed)
+  if (!trimmed || trimmed === props.column.name) { editing.value = false; return }
+  await store.updateColumn(props.column.board_id, props.column.id, trimmed)
   editing.value = false
 }
 
 async function deleteColumn() {
-  if (!confirm('Kolom verwijderen?')) return
-  await store.deleteColumn(props.boardId, props.column.id)
+  if(!confirm('Kolom verwijderen?')) return
+  await store.deleteColumn(props.column.board_id, props.column.id)
 }
 
 function onDragEnd(evt) {
   dragging.value = false
-  const { item, from, to, oldIndex, newIndex } = evt
+  const { item, from, to, newIndex } = evt
   const cardId = item.__draggable_context.element.id
   const fromColumnId = from.dataset.columnId
   const toColumnId = to.dataset.columnId
-  store.moveCard(props.boardId, cardId, fromColumnId, toColumnId, newIndex)
+  store.moveCard(props.column.board_id, cardId, fromColumnId, toColumnId, newIndex)
 }
 </script>
+
+<style>
+.drag-ghost { opacity: 0.4; }
+.drag-chosen { transform: scale(1.03); transition: transform 0.15s ease; }
+
+.card-enter-from, .card-leave-to { opacity: 0; transform: translateY(-5px); }
+.card-enter-active, .card-leave-active { transition: all 0.2s ease; }
+</style>
