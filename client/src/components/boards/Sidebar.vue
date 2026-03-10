@@ -11,18 +11,15 @@
 
       <ul class="flex flex-col gap-3">
         <li
-          v-for="board in recentBoards"
+          v-for="board in boards"
           :key="board.id"
           class="flex justify-between items-center px-3 py-2 rounded-lg
-                 bg-[var(--color-surface)]
-                 border border-[var(--color-border)]
-                 hover:bg-[var(--color-surface-hover)]
-                 transition-colors"
+                bg-[var(--color-surface)]
+                border border-[var(--color-border)]
+                hover:bg-[var(--color-accent)]
+                transition-colors"
         >
-          <RouterLink
-            :to="`/board/${board.id}`"
-            class="flex-1 truncate"
-          >
+          <RouterLink :to="`/board/${board.id}`" class="flex-1 truncate">
             {{ board.name }}
           </RouterLink>
 
