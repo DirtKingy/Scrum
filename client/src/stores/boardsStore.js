@@ -55,18 +55,43 @@ export const useBoardsStore = defineStore('boards', () => {
     }
   }
 
-  async function createBoard(name) {
+  async function createBoard(name, useTemplate = false) {
     if (!name) return
+
     try {
       const board = await boardService.createBoard(name)
-      boards.value.push({ ...board, columns: [] })
-      toast.showToast({ message: 'Board aangemaakt', type: 'success' })
+
+      const newBoard = { ...board, columns: [] }
+      boards.value.push(newBoard)
+
+      // Scrum template
+      if (useTemplate) {
+        const templateColumns = [
+          'Backlog',
+          'Todo',
+          'In Progress',
+          'Review',
+          'Done'
+        ]
+
+        for (const colName of templateColumns) {
+          const col = await boardService.createColumn(board.id, colName)
+          newBoard.columns.push({ ...col, cards: [] })
+        }
+      }
+
+      toast.showToast({
+        message: 'Board aangemaakt',
+        type: 'success'
+      })
     } catch (err) {
       console.error(err)
-      toast.showToast({ message: 'Kon board niet aanmaken', type: 'error' })
+      toast.showToast({
+        message: 'Kon board niet aanmaken',
+        type: 'error'
+      })
     }
   }
-
   async function updateBoard(id, name) {
     if (!name) return
     try {

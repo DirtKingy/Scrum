@@ -10,6 +10,7 @@
       :recentBoards="recentBoards"
       @menu="openMenu"
     />
+
     <!-- Click outside -->
     <section
       v-if="menuBoard"
@@ -37,6 +38,7 @@
         Verwijderen
       </button>
     </section>
+
     <!-- Content -->
     <section class="flex-1 p-8">
 
@@ -53,15 +55,16 @@
       <!-- Create Board Form -->
       <form
         @submit.prevent="addBoard"
-        class="mb-10 max-w-lg mx-auto flex gap-4 items-center"
+        class="mb-10 max-w-lg mx-auto flex flex-col gap-3"
       >
         <input
           v-model="newBoardName"
           placeholder="Nieuw board..."
-          class="flex-1 px-4 py-3 rounded-lg shadow border focus:ring-2 transition outline-none"
+          class="px-4 py-3 rounded-lg shadow border focus:ring-2 transition outline-none"
           :style="inputStyle"
           required
         />
+
         <button
           type="submit"
           class="px-6 py-3 font-medium rounded-lg transition shadow"
@@ -69,11 +72,16 @@
         >
           + Toevoegen
         </button>
+
+        <label class="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+          <input type="checkbox" v-model="useTemplate">
+          Standaard kolommen aanmaken (Backlog, Todo, In Progress, Review, Done)
+        </label>
       </form>
 
     </section>
 
-    <!-- Modals (exact origineel) -->
+    <!-- Modals -->
     <BaseModal
       v-if="showEditModal"
       title="Board bewerken"
@@ -119,23 +127,23 @@ import Toast from '@/components/Toast/Toast.vue'
 
 const boardsStore = useBoardsStore()
 const newBoardName = ref('')
+const useTemplate = ref(false)
 
-// Modal state (origineel)
+// Modal state
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 const editBoardName = ref('')
 const selectedBoard = ref(null)
 
-// Boards via store
+// Boards & recent
 const boards = computed(() => boardsStore.sortedBoards)
-
-// Recent logica hoort hier
 const recentBoards = computed(() =>
   [...boards.value]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 3)
 )
 
+// Menu state
 const menuBoard = ref(null)
 const menuX = ref(0)
 const menuY = ref(0)
@@ -160,16 +168,17 @@ function handleDelete() {
   closeMenu()
 }
 
+// Fetch boards on mount
 onMounted(() => {
   boardsStore.fetchBoards()
 })
 
-// --- Exact originele acties ---
-
+// --- Actions ---
 async function addBoard() {
   if (!newBoardName.value) return
-  await boardsStore.createBoard(newBoardName.value)
+  await boardsStore.createBoard(newBoardName.value, useTemplate.value)
   newBoardName.value = ''
+  useTemplate.value = false
 }
 
 function openEditModal(board) {

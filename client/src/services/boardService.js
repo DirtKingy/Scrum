@@ -10,8 +10,8 @@ export async function getBoards() {
   return data
 }
 
-export async function createBoard(name) {
-  const { data, error } = await supabase
+export async function createBoard(name, useTemplate = false) {
+    const { data, error } = await supabase
     .from('boards')
     .insert([{ name }])
     .select()
