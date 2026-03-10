@@ -1,6 +1,8 @@
 <template>
-  <main class="min-h-screen font-sans p-6"
-        :style="{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }">
+  <main
+    class="min-h-screen font-sans p-6"
+    :style="{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }"
+  >
     <!-- Board Header -->
     <BoardHeader
       :board="board"
@@ -10,8 +12,37 @@
 
     <Toast />
 
-    <!-- Columns met drag & drop -->
-    <transition-group name="column" tag="div" class="flex space-x-4" v-if="board">
+    <!-- Empty state -->
+    <template v-if="board && boardColumns.length === 0">
+      <section
+        class="flex flex-col items-center justify-center text-center py-24 px-6 rounded-xl border border-dashed"
+        style="border-color: var(--color-border); background: var(--color-surface-alt);"
+      >
+        <h3 class="text-xl font-semibold mb-2">
+          Nog geen kolommen
+        </h3>
+
+        <p class="mb-6 max-w-md text-[var(--color-text-muted)]">
+          Dit bord is nog leeg. Maak je eerste kolom aan om kaarten te organiseren.
+        </p>
+
+        <button
+          @click="showColumnModal = true"
+          class="px-5 py-2 rounded-lg font-medium transition"
+          style="background: var(--color-accent); color: #0f172a;"
+        >
+          + Nieuwe kolom
+        </button>
+      </section>
+    </template>
+
+    <!-- Columns -->
+    <transition-group
+      v-else-if="board"
+      name="column"
+      tag="section"
+      class="flex space-x-4"
+    >
       <BoardColumn
         v-for="col in boardColumns"
         :key="col.id"
@@ -126,32 +157,43 @@ const newColumnName = ref('')
 async function loadBoardData() {
   await store.fetchBoards()
   await store.fetchColumns(boardId)
+
   for (const col of store.getColumnsByBoard(boardId).value) {
     await store.fetchCards(boardId, col.id)
   }
 }
+
 onMounted(loadBoardData)
 
 // Column actions
 async function createColumn() {
   if (!newColumnName.value) return
+
   await store.createColumn(boardId, newColumnName.value)
+
   newColumnName.value = ''
   showColumnModal.value = false
 }
 
 // Card actions
 function openNewCardModal(columnId) {
-  selectedCard.value = { title: '', description: '', column_id: columnId }
+  selectedCard.value = {
+    title: '',
+    description: '',
+    column_id: columnId
+  }
+
   showCardModal.value = true
 }
 
 async function createCard() {
   if (!selectedCard.value.title) return
+
   await store.createCard(boardId, selectedCard.value.column_id, {
     title: selectedCard.value.title,
     description: selectedCard.value.description
   })
+
   showCardModal.value = false
 }
 
@@ -167,12 +209,14 @@ function closeCardOverlay() {
 // Edit modal vanuit overlay
 function openEditFromOverlay(card) {
   selectedCard.value = { ...card }
+
   store.closeCardDetail()
   showEditModal.value = true
 }
 
 async function saveEditedCard() {
   if (!selectedCard.value.id) return
+
   await store.updateCard(
     boardId,
     selectedCard.value.column_id,
@@ -182,6 +226,7 @@ async function saveEditedCard() {
       description: selectedCard.value.description
     }
   )
+
   showEditModal.value = false
 }
 </script>
@@ -192,6 +237,7 @@ async function saveEditedCard() {
   opacity: 0;
   transform: translateY(-10px);
 }
+
 .column-enter-active,
 .column-leave-active {
   transition: all 0.25s ease;
