@@ -74,13 +74,13 @@
         class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition"
         required
       />
+
       <textarea
         v-model="selectedCard.description"
         placeholder="Beschrijving (optioneel)"
-        class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
+        class="w-full mt-4 px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
       ></textarea>
     </BaseModal>
-
     <!-- Column Modal -->
     <BaseModal
       v-if="showColumnModal"
@@ -112,10 +112,11 @@
         style="background-color: var(--color-surface); border-color: var(--color-border); color: var(--color-text); font-family: var(--font-sans);"
         required
       />
+
       <textarea
         v-model="selectedCard.description"
         placeholder="Beschrijving (optioneel)"
-        class="w-full px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
+        class="w-full mt-4 px-4 py-3 rounded-lg shadow border focus:outline-none focus:ring-2 transition resize-none"
         style="background-color: var(--color-surface); border-color: var(--color-border); color: var(--color-text); font-family: var(--font-sans);"
       ></textarea>
     </BaseModal>

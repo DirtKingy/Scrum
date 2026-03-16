@@ -11,20 +11,23 @@
 
       <ul class="flex flex-col gap-3">
         <li
-          v-for="board in boards"
+          v-for="board in recentBoards"
           :key="board.id"
-          class="flex justify-between items-center px-3 py-2 rounded-lg
-                bg-[var(--color-surface)]
-                border border-[var(--color-border)]
-                hover:bg-[var(--color-accent)]
-                transition-colors"
+          class="group flex justify-between items-center px-3 py-2 rounded-lg
+                 bg-[var(--color-surface)]
+                 border border-[var(--color-border)]
+                 hover:bg-[var(--color-accent)]
+                 transition-colors"
         >
-          <RouterLink :to="`/board/${board.id}`" class="flex-1 truncate">
+          <RouterLink
+            :to="`/board/${board.id}`"
+            class="flex-1 truncate group-hover:text-black"
+          >
             {{ board.name }}
           </RouterLink>
 
           <button
-            class="opacity-60 hover:opacity-100"
+            class="opacity-60 hover:opacity-100 group-hover:text-black"
             @click.stop="$emit('menu', { board, event: $event })"
           >
             ⋮
@@ -43,21 +46,21 @@
         <li
           v-for="board in boards"
           :key="board.id"
-          class="flex justify-between items-center px-3 py-2 rounded-lg
+          class="group flex justify-between items-center px-3 py-2 rounded-lg
                  bg-[var(--color-surface)]
                  border border-[var(--color-border)]
-                 hover:bg-[var(--color-surface-hover)]
+                 hover:bg-[var(--color-accent)]
                  transition-colors"
         >
           <RouterLink
             :to="`/board/${board.id}`"
-            class="flex-1 truncate"
+            class="flex-1 truncate group-hover:text-black"
           >
             {{ board.name }}
           </RouterLink>
 
           <button
-            class="opacity-60 hover:opacity-100"
+            class="opacity-60 hover:opacity-100 group-hover:text-black"
             @click.stop="$emit('menu', { board, event: $event })"
           >
             ⋮
