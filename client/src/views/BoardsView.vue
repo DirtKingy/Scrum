@@ -73,9 +73,24 @@
           + Toevoegen
         </button>
 
-        <label class="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-          <input type="checkbox" v-model="useTemplate">
-          Standaard kolommen aanmaken (Backlog, Todo, In Progress, Review, Done)
+        <label
+          class="cursor-pointer border rounded-xl p-4 transition flex flex-col gap-2"
+          :class="useTemplate ? 'ring-2 ring-blue-500 bg-blue-50/40' : 'hover:bg-[var(--color-accent-muted)]'"
+        >
+          <input
+            type="checkbox"
+            v-model="useTemplate"
+            class="sr-only"
+          >
+
+          <span class="font-semibold">
+            Scrum template
+          </span>
+
+          <span class="text-sm text-[var(--color-text-muted)]">
+            Maakt automatisch kolommen: Backlog → Todo → In Progress → Review → Done
+          </span>
+
         </label>
       </form>
 
