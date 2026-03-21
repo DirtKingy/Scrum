@@ -8,22 +8,29 @@
 
     <!-- Panel -->
     <section
-      class="relative rounded-xl shadow-xl w-full max-w-3xl p-6 bg-surface text-text font-sans flex gap-6"
+      class="relative rounded-xl shadow-xl w-full max-w-3xl p-6 bg-surface text-text font-sans flex gap-6 h-[600px]"
     >
       <!-- Left: Title + Description -->
       <section class="flex-1">
         <header class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold font-display text-accent">{{ card.title }}</h2>
-          <button @click="close" class="text-lg font-bold text-accent-muted hover:opacity-80 transition">
+          <h2 class="text-xl font-semibold font-display text-accent">
+            {{ card.title }}
+          </h2>
+          <button
+            @click="close"
+            class="text-lg font-bold text-accent-muted hover:opacity-80 transition"
+          >
             &times;
           </button>
         </header>
 
-        <p class="text-text-muted">{{ card.description || 'Geen beschrijving' }}</p>
+        <p class="text-text-muted">
+          {{ card.description || 'Geen beschrijving' }}
+        </p>
       </section>
 
       <!-- Right: Nav + Tab Content -->
-      <section class="w-64 flex flex-col">
+      <section class="w-64 flex flex-col h-full">
         <!-- Nav Bar -->
         <nav class="flex border-b border-gray-300 mb-4 justify-end" role="tablist">
           <button
@@ -44,14 +51,25 @@
         </nav>
 
         <!-- Tab Content -->
-        <section class="flex-1 flex flex-col overflow-y-auto">
+        <section class="flex-1 flex flex-col min-h-0">
           <!-- Comments Tab -->
-          <section v-if="activeTab === 'Comments'" role="tabpanel" class="flex-1 flex flex-col">
+          <section
+            v-if="activeTab === 'Comments'"
+            role="tabpanel"
+            class="flex-1 flex flex-col min-h-0"
+          >
             <ul class="space-y-2 flex-1 overflow-y-auto mb-2">
-              <li v-for="(comment, index) in card.comments" :key="index" class="text-text-muted">
+              <li
+                v-for="(comment, index) in card.comments"
+                :key="index"
+                class="text-text-muted"
+              >
                 {{ comment }}
               </li>
-              <li v-if="!card.comments || card.comments.length === 0" class="text-text-muted">
+              <li
+                v-if="!card.comments || card.comments.length === 0"
+                class="text-text-muted"
+              >
                 Geen comments
               </li>
             </ul>
@@ -139,9 +157,11 @@ function addComment() {
 aside {
   transition: opacity 0.2s ease;
 }
+
 button:hover {
   opacity: 0.85;
 }
+
 textarea:focus {
   outline: 2px solid var(--color-accent);
 }
