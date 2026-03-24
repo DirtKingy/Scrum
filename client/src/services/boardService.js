@@ -11,7 +11,7 @@ export async function getBoards() {
 }
 
 export async function createBoard(name, useTemplate = false) {
-    const { data, error } = await supabase
+  const { data, error } = await supabase
     .from('boards')
     .insert([{ name }])
     .select()
@@ -77,6 +77,24 @@ export async function deleteColumn(id) {
   return true
 }
 
+// Update column positions
+export async function updateColumnPositions(columns) {
+  try {
+    for (const c of columns) {
+      if (!c.id) continue
+      const { error } = await supabase
+        .from('columns')
+        .update({ position: c.position })
+        .eq('id', c.id)
+      if (error) throw error
+    }
+    return true
+  } catch (err) {
+    console.error('Kon kolomposities niet bijwerken', err)
+    throw err
+  }
+}
+
 // -------------------- CARDS --------------------
 export async function fetchCards(columnId) {
   const { data, error } = await supabase
@@ -118,15 +136,21 @@ export async function deleteCard(id) {
 
 export async function updateCardPositions(cards) {
   try {
-    for (const c of cards) {
-      if (!c.id) continue
-      const { error } = await supabase
-        .from('cards')
-        .update({ position: c.position, column_id: c.column_id })
-        .eq('id', c.id)
+    const updates = cards
+      .filter(c => c.id)
+      .map(c =>
+        supabase
+          .from('cards')
+          .update({ position: c.position, column_id: c.column_id })
+          .eq('id', c.id)
+      )
 
-      if (error) throw error
+    const results = await Promise.all(updates)
+
+    for (const r of results) {
+      if (r.error) throw r.error
     }
+
     return true
   } catch (err) {
     console.error('Kon posities niet bijwerken', err)

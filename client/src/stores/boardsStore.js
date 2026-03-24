@@ -1,3 +1,4 @@
+// stores/boardsStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as boardService from '@/services/boardService'
@@ -8,17 +9,16 @@ export const useBoardsStore = defineStore('boards', () => {
   const toast = useToastStore()
 
   // -------------------- HELPERS --------------------
-  function findBoard(boardId) {
-    return boards.value.find(b => b.id === boardId)
-  }
-  function findColumn(boardId, columnId) {
+  const findBoard = (boardId) => boards.value.find(b => b.id === boardId)
+  const findColumn = (boardId, columnId) => {
     const board = findBoard(boardId)
     return board?.columns.find(c => c.id === columnId)
   }
 
   // -------------------- GETTERS --------------------
   const getBoardById = (boardId) => computed(() => findBoard(boardId))
-  const getColumnsByBoard = (boardId) => computed(() => findBoard(boardId)?.columns || [])
+  const getColumnsByBoard = (boardId) =>
+    computed(() => findBoard(boardId)?.columns || [])
   const getCardsByColumn = (columnId) =>
     computed(() => {
       for (const board of boards.value) {
@@ -27,22 +27,17 @@ export const useBoardsStore = defineStore('boards', () => {
       }
       return []
     })
-  const sortedBoards = computed(() => {
-    return [...boards.value].sort(
+
+  const sortedBoards = computed(() =>
+    [...boards.value].sort(
       (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
     )
-  })
+  )
 
   // -------------------- CARD OVERLAY --------------------
-  const activeCard = ref(null) // <-- hier wordt de overlay op gebaseerd
-
-  function openCardDetail(card) {
-    activeCard.value = card
-  }
-
-  function closeCardDetail() {
-    activeCard.value = null
-  }
+  const activeCard = ref(null)
+  const openCardDetail = (card) => { activeCard.value = card }
+  const closeCardDetail = () => { activeCard.value = null }
 
   // -------------------- BOARDS --------------------
   async function fetchBoards() {
@@ -57,41 +52,26 @@ export const useBoardsStore = defineStore('boards', () => {
 
   async function createBoard(name, useTemplate = false) {
     if (!name) return
-
     try {
       const board = await boardService.createBoard(name)
-
       const newBoard = { ...board, columns: [] }
       boards.value.push(newBoard)
 
-      // Scrum template
       if (useTemplate) {
-        const templateColumns = [
-          'Backlog',
-          'Todo',
-          'In Progress',
-          'Review',
-          'Done'
-        ]
-
+        const templateColumns = ['Backlog','Todo','In Progress','Review','Done']
         for (const colName of templateColumns) {
           const col = await boardService.createColumn(board.id, colName)
           newBoard.columns.push({ ...col, cards: [] })
         }
       }
 
-      toast.showToast({
-        message: 'Board aangemaakt',
-        type: 'success'
-      })
+      toast.showToast({ message: 'Board aangemaakt', type: 'success' })
     } catch (err) {
       console.error(err)
-      toast.showToast({
-        message: 'Kon board niet aanmaken',
-        type: 'error'
-      })
+      toast.showToast({ message: 'Kon board niet aanmaken', type: 'error' })
     }
   }
+
   async function updateBoard(id, name) {
     if (!name) return
     try {
@@ -168,6 +148,17 @@ export const useBoardsStore = defineStore('boards', () => {
     }
   }
 
+  async function moveColumn(boardId, newColumnsOrder) {
+    const board = findBoard(boardId)
+    if (!board) return
+
+    board.columns = [...newColumnsOrder]
+
+    const payload = board.columns.map((c, i) => ({ id: c.id, position: i }))
+    try { await boardService.updateColumnPositions(payload) }
+    catch (err) { console.error('Kon kolomposities niet bijwerken', err) }
+  }
+
   // -------------------- CARDS --------------------
   async function fetchCards(boardId, columnId) {
     try {
@@ -185,30 +176,12 @@ export const useBoardsStore = defineStore('boards', () => {
       const col = findColumn(boardId, columnId)
       if (!col) return
 
-      col.cards.forEach(c => {
-        c.position += 1
-      })
-
-      const card = await boardService.createCard(columnId, {
-        title,
-        description,
-        position: 0
-      })
-
+      col.cards.forEach(c => c.position += 1)
+      const card = await boardService.createCard(columnId, { title, description, position: 0 })
       col.cards.unshift(card)
 
-      const payload = col.cards
-        .filter(c => c.id)
-        .map(c => ({
-          id: c.id,
-          position: c.position,
-          column_id: c.column_id
-        }))
-
-      if (payload.length) {
-        await boardService.updateCardPositions(payload)
-      }
-
+      const payload = col.cards.map(c => ({ id: c.id, position: c.position, column_id: c.column_id }))
+      if (payload.length) await boardService.updateCardPositions(payload)
       toast.showToast({ message: 'Card aangemaakt', type: 'success' })
     } catch (err) {
       console.error(err)
@@ -237,55 +210,32 @@ export const useBoardsStore = defineStore('boards', () => {
 
     const cardIndex = fromCol.cards.findIndex(c => c.id === cardId)
     if (cardIndex === -1) return
-
     const [card] = fromCol.cards.splice(cardIndex, 1)
-    toCol.cards.splice(newIndex, 0, card)
     card.column_id = toColumnId
+    toCol.cards.splice(newIndex, 0, card)
 
-    const renumber = (cards) => {
-      cards.forEach((c, i) => {
-        if (!c.id) throw new Error('Card missing ID during move')
-        c.position = i
-      })
-    }
-    renumber(fromCol.cards)
-    renumber(toCol.cards)
-
-    const payload = [...fromCol.cards, ...toCol.cards]
-      .filter(c => c.id)
-      .map(c => ({
-        id: c.id,
-        position: c.position,
-        column_id: c.column_id
-      }))
+    // Re-index
+    const renumber = (cards) => cards.map((c, i) => ({ ...c, position: i }))
+    const fromPayload = renumber(fromCol.cards)
+    const toPayload = (fromColumnId !== toColumnId) ? renumber(toCol.cards) : fromPayload
 
     try {
-      if (payload.length) await boardService.updateCardPositions(payload)
+      if (fromColumnId === toColumnId) {
+        await boardService.updateCardPositions(fromPayload)
+      } else {
+        await boardService.updateCardPositions(fromPayload)
+        await boardService.updateCardPositions(toPayload)
+      }
     } catch (err) {
-      console.error('Kon posities niet bijwerken', err)
+      console.error('Kon card move niet opslaan', err)
     }
   }
 
   return {
-    boards,
-    sortedBoards,
-    getBoardById,
-    getColumnsByBoard,
-    getCardsByColumn,
-    activeCard,             // <-- reactive ref voor overlay
-    openCardDetail,         // <-- open overlay
-    closeCardDetail,        // <-- close overlay
-    fetchBoards,
-    createBoard,
-    updateBoard,
-    deleteBoard,
-    fetchColumns,
-    createColumn,
-    updateColumn,
-    deleteColumn,
-    fetchCards,
-    createCard,
-    updateCard,
-    moveCard
+    boards, sortedBoards, getBoardById, getColumnsByBoard, getCardsByColumn,
+    activeCard, openCardDetail, closeCardDetail,
+    fetchBoards, createBoard, updateBoard, deleteBoard,
+    fetchColumns, createColumn, updateColumn, deleteColumn, moveColumn,
+    fetchCards, createCard, updateCard, moveCard
   }
 })

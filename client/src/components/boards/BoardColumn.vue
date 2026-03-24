@@ -78,11 +78,26 @@ async function deleteColumn() {
 
 function onDragEnd(evt) {
   dragging.value = false
-  const { item, from, to, newIndex } = evt
-  const cardId = item.__draggable_context.element.id
-  const fromColumnId = from.dataset.columnId
-  const toColumnId = to.dataset.columnId
-  store.moveCard(props.column.board_id, cardId, fromColumnId, toColumnId, newIndex)
+
+  const card = evt.item.__draggable_context?.element
+  if (!card) return
+
+  const fromColumnId = evt.from?.closest('[data-column-id]')?.dataset.columnId
+  const toColumnId = evt.to?.closest('[data-column-id]')?.dataset.columnId
+
+
+  if (!fromColumnId || !toColumnId) {
+    console.error('Column IDs missing', { fromColumnId, toColumnId })
+    return
+  }
+
+  store.moveCard(
+    props.column.board_id,
+    card.id,
+    fromColumnId,
+    toColumnId,
+    evt.newIndex
+  )
 }
 </script>
 
