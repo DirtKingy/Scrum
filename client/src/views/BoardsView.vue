@@ -73,25 +73,30 @@
           + Toevoegen
         </button>
 
-        <label
-          class="cursor-pointer border rounded-xl p-4 transition flex flex-col gap-2"
-          :class="useTemplate ? 'ring-2 ring-blue-500 bg-blue-50/40' : 'hover:bg-[var(--color-accent-muted)]'"
-        >
-          <input
-            type="checkbox"
-            v-model="useTemplate"
-            class="sr-only"
+        <!-- Templates als horizontale knoppen -->
+        <section class="flex gap-3 flex-wrap mt-4">
+          <label
+            v-for="(template, index) in customTemplates"
+            :key="index"
+            class="cursor-pointer border rounded-xl p-4 transition flex flex-col gap-2"
+            :class="selectedTemplate === template ? 'ring-2 ring-blue-500 bg-blue-50/40' : 'hover:bg-[var(--color-accent-muted)]'"
+            @click="selectedTemplate = template"
           >
+            <span class="font-semibold">{{ template.name }}</span>
+            <span class="text-sm text-[var(--color-text-muted)]">
+              {{ template.columns.join(' → ') }}
+            </span>
+          </label>
 
-          <span class="font-semibold">
-            Scrum template
-          </span>
+          <label
+            class="cursor-pointer border rounded-xl p-4 transition flex flex-col gap-2 bg-gray-100 hover:bg-gray-200"
+            @click="addCustomTemplate"
+          >
+            <span class="font-semibold">+ Nieuwe template</span>
+            <span class="text-sm text-[var(--color-text-muted)]">Maak je eigen kolommen</span>
+          </label>
+        </section>
 
-          <span class="text-sm text-[var(--color-text-muted)]">
-            Maakt automatisch kolommen: Backlog → Todo → In Progress → Review → Done
-          </span>
-
-        </label>
       </form>
 
     </section>
@@ -134,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useBoardsStore } from '@/stores/boardsStore'
 import Sidebar from '@/components/boards/Sidebar.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
@@ -142,7 +147,34 @@ import Toast from '@/components/Toast/Toast.vue'
 
 const boardsStore = useBoardsStore()
 const newBoardName = ref('')
-const useTemplate = ref(false)
+const selectedTemplate = ref(null)
+
+// --- Frontend templates opgeslagen in localStorage ---
+const customTemplates = ref([])
+
+onMounted(() => {
+  const saved = localStorage.getItem('customTemplates')
+  if (saved) {
+    try {
+      customTemplates.value = JSON.parse(saved)
+    } catch {
+      customTemplates.value = [
+        { name: 'Scrum', columns: ['Backlog', 'Todo', 'In Progress', 'Review', 'Done'] }
+      ]
+    }
+  } else {
+    customTemplates.value = [
+      { name: 'Scrum', columns: ['Backlog', 'Todo', 'In Progress', 'Review', 'Done'] }
+    ]
+  }
+
+  boardsStore.fetchBoards()
+})
+
+// Update localStorage telkens de templates wijzigen
+watch(customTemplates, () => {
+  localStorage.setItem('customTemplates', JSON.stringify(customTemplates.value))
+}, { deep: true })
 
 // Modal state
 const showEditModal = ref(false)
@@ -183,17 +215,38 @@ function handleDelete() {
   closeMenu()
 }
 
-// Fetch boards on mount
-onMounted(() => {
-  boardsStore.fetchBoards()
-})
-
 // --- Actions ---
 async function addBoard() {
   if (!newBoardName.value) return
-  await boardsStore.createBoard(newBoardName.value, useTemplate.value)
+
+  // Maak board aan in store/backend
+  await boardsStore.createBoard(newBoardName.value, false)
+  const newBoard = boardsStore.boards[boardsStore.boards.length - 1]
+
+  // Voeg kolommen toe van geselecteerde template
+  if (selectedTemplate.value) {
+    for (const colName of selectedTemplate.value.columns) {
+      const col = await boardsStore.createColumn(newBoard.id, colName)
+      newBoard.columns.push({ ...col, cards: [] })
+    }
+  }
+
   newBoardName.value = ''
-  useTemplate.value = false
+  selectedTemplate.value = null
+}
+
+// Voeg nieuwe template toe
+function addCustomTemplate() {
+  const name = prompt('Naam van nieuwe template:')
+  if (!name) return
+
+  const columns = prompt('Kolommen gescheiden door komma (bijv. Backlog,Todo,In Progress):')
+  if (!columns) return
+
+  customTemplates.value.push({
+    name,
+    columns: columns.split(',').map(c => c.trim())
+  })
 }
 
 function openEditModal(board) {
