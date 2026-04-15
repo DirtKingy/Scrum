@@ -10,7 +10,7 @@ export async function getBoards() {
   return data
 }
 
-export async function createBoard(name, useTemplate = false) {
+export async function createBoard(name) {
   const { data, error } = await supabase
     .from('boards')
     .insert([{ name }])
@@ -77,22 +77,16 @@ export async function deleteColumn(id) {
   return true
 }
 
-// Update column positions
 export async function updateColumnPositions(columns) {
-  try {
-    for (const c of columns) {
-      if (!c.id) continue
-      const { error } = await supabase
-        .from('columns')
-        .update({ position: c.position })
-        .eq('id', c.id)
-      if (error) throw error
-    }
-    return true
-  } catch (err) {
-    console.error('Kon kolomposities niet bijwerken', err)
-    throw err
+  for (const c of columns) {
+    const { error } = await supabase
+      .from('columns')
+      .update({ position: c.position })
+      .eq('id', c.id)
+
+    if (error) throw error
   }
+  return true
 }
 
 // -------------------- CARDS --------------------
@@ -135,25 +129,83 @@ export async function deleteCard(id) {
 }
 
 export async function updateCardPositions(cards) {
-  try {
-    const updates = cards
-      .filter(c => c.id)
-      .map(c =>
-        supabase
-          .from('cards')
-          .update({ position: c.position, column_id: c.column_id })
-          .eq('id', c.id)
-      )
+  const updates = cards
+    .filter(c => c.id)
+    .map(c =>
+      supabase
+        .from('cards')
+        .update({
+          position: c.position,
+          column_id: c.column_id
+        })
+        .eq('id', c.id)
+    )
 
-    const results = await Promise.all(updates)
-
-    for (const r of results) {
-      if (r.error) throw r.error
-    }
-
-    return true
-  } catch (err) {
-    console.error('Kon posities niet bijwerken', err)
-    throw err
+  const results = await Promise.all(updates)
+  for (const r of results) {
+    if (r.error) throw r.error
   }
+
+  return true
+}
+
+// -------------------- ATTACHMENTS (IN BOARD SERVICE) --------------------
+export async function fetchAttachments(cardId) {
+  const { data, error } = await supabase
+    .from('card_attachments')
+    .select('*')
+    .eq('card_id', cardId)
+
+  if (error) throw error
+
+  return data.map(a => ({
+    id: a.id,
+    name: a.file_name,
+    url: a.file_url
+  }))
+}
+
+export async function uploadAttachment(cardId, file) {
+  const filePath = `${cardId}/${Date.now()}-${file.name}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('attachments')
+    .upload(filePath, file)
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage
+    .from('attachments')
+    .getPublicUrl(filePath)
+
+  const fileUrl = data.publicUrl
+
+  const { data: inserted, error: dbError } = await supabase
+    .from('card_attachments')
+    .insert({
+      card_id: cardId,
+      file_name: file.name,
+      file_url: fileUrl
+    })
+    .select()
+    .single()
+
+  if (dbError) throw dbError
+
+  return {
+    id: inserted.id,
+    name: file.name,
+    url: fileUrl
+  }
+}
+
+export async function deleteAttachment(id) {
+  const { error } = await supabase
+    .from('card_attachments')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+
+  return true
 }

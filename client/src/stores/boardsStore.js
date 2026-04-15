@@ -5,6 +5,7 @@ import * as boardService from '@/services/boardService'
 import { useToastStore } from '@/stores/useToastStore'
 
 export const useBoardsStore = defineStore('boards', () => {
+  const attachmentsByCard = ref({})
   const boards = ref([])
   const toast = useToastStore()
 
@@ -33,7 +34,8 @@ export const useBoardsStore = defineStore('boards', () => {
       (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
     )
   )
-
+  const getAttachments = (cardId) =>
+    computed(() => attachmentsByCard.value[cardId] || [])
   // -------------------- CARD OVERLAY --------------------
   const activeCard = ref(null)
   const openCardDetail = (card) => { activeCard.value = card }
@@ -164,13 +166,20 @@ export const useBoardsStore = defineStore('boards', () => {
     try {
       const col = findColumn(boardId, columnId)
       if (!col) return
-      col.cards = await boardService.fetchCards(columnId)
+
+      const cards = await boardService.fetchCards(columnId)
+
+      for (const card of cards) {
+        card.attachments = await boardService.fetchAttachments(card.id)
+      }
+
+      col.cards = cards
     } catch (err) {
       console.error(err)
       toast.showToast({ message: 'Kon kaarten niet laden', type: 'error' })
     }
   }
-
+  
   async function createCard(boardId, columnId, { title, description }) {
     try {
       const col = findColumn(boardId, columnId)
@@ -231,11 +240,56 @@ export const useBoardsStore = defineStore('boards', () => {
     }
   }
 
+  // -------------------- ATTACHMENTS (via service) --------------------
+  async function fetchAttachments(cardId) {
+    try {
+      const data = await boardService.fetchAttachments(cardId)
+      attachmentsByCard.value[cardId] = data
+      return data
+    } catch (err) {
+      console.error(err)
+      attachmentsByCard.value[cardId] = []
+      return []
+    }
+  }
+
+  async function uploadAttachment(cardId, file) {
+    try {
+      const attachment = await boardService.uploadAttachment(cardId, file)
+
+      if (!attachmentsByCard.value[cardId]) {
+        attachmentsByCard.value[cardId] = []
+      }
+
+      attachmentsByCard.value[cardId].push(attachment)
+
+      return attachment
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
+  }
+
+  async function deleteAttachment(id, cardId) {
+    try {
+      await boardService.deleteAttachment(id)
+
+      if (attachmentsByCard.value[cardId]) {
+        attachmentsByCard.value[cardId] =
+          attachmentsByCard.value[cardId].filter(a => a.id !== id)
+      }
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
+  }
+
   return {
     boards, sortedBoards, getBoardById, getColumnsByBoard, getCardsByColumn,
     activeCard, openCardDetail, closeCardDetail,
     fetchBoards, createBoard, updateBoard, deleteBoard,
     fetchColumns, createColumn, updateColumn, deleteColumn, moveColumn,
-    fetchCards, createCard, updateCard, moveCard
+    fetchCards, createCard, updateCard, moveCard,
+    fetchAttachments, uploadAttachment, deleteAttachment
   }
 })

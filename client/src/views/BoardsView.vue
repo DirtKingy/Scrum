@@ -296,7 +296,7 @@ const inputStyle = {
 }
 
 const buttonStyle = {
-  backgroundColor: 'var(--color-primary-btn)',
+  backgroundColor: 'var(--color-accent-muted)',
   borderColor: 'var(--color-border)',
   color: 'var(--color-text)'
 }

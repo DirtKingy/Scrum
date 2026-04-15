@@ -58,6 +58,8 @@
       :card="activeCard"
       @close="closeCardOverlay"
       @edit="openEditFromOverlay"
+      @upload-attachment="uploadAttachment"
+      @delete-attachment="deleteAttachment"
     />
 
     <!-- Modals -->
@@ -187,6 +189,25 @@ async function saveEditedCard() {
   )
 
   showEditModal.value = false
+}
+
+async function uploadAttachment(file) {
+  if (!activeCard.value) return
+
+  const uploaded = await store.uploadAttachment(activeCard.value.id, file)
+
+  if (!activeCard.value.attachments) {
+    activeCard.value.attachments = []
+  }
+
+  activeCard.value.attachments.push(uploaded)
+}
+
+async function deleteAttachment(file) {
+  await store.deleteAttachment(file.id)
+
+  activeCard.value.attachments =
+    activeCard.value.attachments.filter(a => a.id !== file.id)
 }
 
 // ------------------- DRAG COLUMNS -------------------

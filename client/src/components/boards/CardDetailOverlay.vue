@@ -40,10 +40,7 @@
               {{ label.text }}
             </span>
 
-            <span
-              v-if="!card.labels || card.labels.length === 0"
-              class="text-text-muted text-sm"
-            >
+            <span v-if="!card.labels?.length" class="text-text-muted text-sm">
               Geen labels
             </span>
           </section>
@@ -62,8 +59,8 @@
 
       <!-- Right -->
       <section class="w-full md:w-78 flex flex-col h-full min-h-0 flex-shrink-0">
-        
-        <!-- Voeg label toe -->
+
+        <!-- Labels -->
         <section class="mb-4">
           <p class="text-xs uppercase tracking-wide text-text-muted mb-2">
             Voeg label toe
@@ -73,7 +70,7 @@
             <input
               v-model="newLabel"
               placeholder="Label naam..."
-              class="flex-1 px-2 py-1 rounded border border-gray-400 bg-surface text-text text-sm focus:border-accent focus:ring-1 focus:ring-accent"
+              class="flex-1 px-2 py-1 rounded border border-gray-400 bg-surface text-text text-sm"
             />
 
             <input
@@ -84,7 +81,7 @@
 
             <button
               @click="addLabel"
-              class="px-3 py-1 rounded bg-accent text-[#0f172a] font-semibold hover:brightness-110 transition"
+              class="px-3 py-1 rounded bg-accent text-[#0f172a] font-semibold"
             >
               +
             </button>
@@ -92,31 +89,26 @@
         </section>
 
         <!-- Tabs -->
-        <nav
-          class="flex border-b border-gray-300 mb-4 justify-start md:justify-end overflow-x-auto flex-shrink-0"
-          role="tablist"
-        >
+        <nav class="flex border-b border-gray-300 mb-4">
           <button
             v-for="tab in tabs"
             :key="tab"
             @click="activeTab = tab"
             :class="[
-              'px-3 py-2 -mb-px font-medium transition whitespace-nowrap min-w-max',
-              activeTab === tab
-                ? 'border-b-2 border-accent text-accent'
-                : 'text-text-muted hover:text-text'
+              'px-3 py-2 font-medium',
+              activeTab === tab ? 'text-accent border-b-2 border-accent' : 'text-text-muted'
             ]"
           >
             {{ tab }}
           </button>
         </nav>
 
-        <!-- Tab Content -->
+        <!-- Content -->
         <section class="flex-1 flex flex-col min-h-0">
 
           <!-- Comments -->
-          <section v-if="activeTab === 'Comments'" class="flex-1 flex flex-col min-h-0">
-            <ul class="space-y-2 flex-1 overflow-y-auto mb-3 pr-1">
+          <section v-if="activeTab === 'Comments'" class="flex-1 flex flex-col">
+            <ul class="flex-1 overflow-y-auto mb-3">
               <li v-for="(comment, index) in card.comments" :key="index">
                 {{ comment }}
               </li>
@@ -126,14 +118,10 @@
             <form @submit.prevent="addComment" class="flex flex-col gap-2">
               <textarea
                 v-model="newComment"
-                placeholder="Schrijf iets..."
-                class="w-full px-3 py-2 rounded border border-gray-400 text-text resize-none bg-surface focus:border-accent focus:ring-1 focus:ring-accent"
+                class="w-full px-3 py-2 border rounded bg-surface"
                 rows="3"
-              ></textarea>
-              <button
-                type="submit"
-                class="self-end px-3 py-2 rounded bg-accent text-[#0f172a] font-semibold hover:brightness-110 transition"
-              >
+              />
+              <button class="self-end px-3 py-2 bg-accent text-[#0f172a] rounded">
                 Voeg toe
               </button>
             </form>
@@ -145,38 +133,47 @@
           </section>
 
           <!-- Attachments -->
-          <section v-else-if="activeTab === 'Attachments'" class="flex-1 flex flex-col min-h-0">
-            <p class="text-xs uppercase tracking-wide text-text-muted mb-2">
-              Attachments
-            </p>
+          <section v-else-if="activeTab === 'Attachments'" class="flex-1 flex flex-col">
+            <p class="text-xs uppercase text-text-muted mb-2">Attachments</p>
 
-            <!-- Upload -->
+            <!-- upload -->
             <input
+              ref="fileInput"
               type="file"
+              class="hidden"
               @change="handleFileUpload"
-              class="mb-3"
             />
 
-            <!-- List -->
-            <ul class="space-y-2 flex-1 overflow-y-auto mb-3 pr-1">
+            <section class="mb-3 flex items-center gap-2">
+              <button
+                @click="triggerFileInput"
+                class="px-3 py-2 rounded bg-accent text-[#0f172a] font-semibold hover:opacity-90 transition"
+              >
+                + Bestand uploaden
+              </button>
+            </section>
+
+            <ul class="flex-1 overflow-y-auto">
               <li
-                v-for="(file, index) in card.attachments"
-                :key="index"
-                class="text-text-muted break-words flex justify-between items-center"
+                v-for="file in card.attachments"
+                :key="file.id"
+                class="flex justify-between items-center text-text-muted"
               >
                 <section class="flex items-center gap-2">
                   <img
-                    v-if="file.type.startsWith('image/')"
-                    :src="file.data"
+                    v-if="file.url"
+                    :src="file.url"
                     class="w-10 h-10 object-cover rounded"
                   />
                   {{ file.name }}
                 </section>
 
-                <button @click="removeAttachment(index)">✕</button>
+                <button @click="removeAttachment(file)">
+                  ✕
+                </button>
               </li>
 
-              <li v-if="!card.attachments?.length" class="text-text-muted">
+              <li v-if="!card.attachments?.length">
                 Geen bijlagen
               </li>
             </ul>
@@ -188,13 +185,14 @@
         <footer class="flex justify-end gap-2 mt-4">
           <button
             @click="editCard"
-            class="px-4 py-2 rounded bg-accent text-[#0f172a] font-semibold hover:brightness-110 transition shadow-md"
+            class="px-4 py-2 bg-accent text-[#0f172a] rounded"
           >
             Bewerken
           </button>
+
           <button
             @click="close"
-            class="px-4 py-2 rounded bg-primary-btn text-text font-medium border border-gray-500 hover:bg-[var(--color-primary-btn-hover)]"
+            class="px-4 py-2 bg-primary-btn border rounded"
           >
             Sluiten
           </button>
@@ -205,13 +203,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps({
-  card: { type: Object, required: true }
+  card: Object
 })
 
-const emit = defineEmits(['close', 'edit'])
+const emit = defineEmits([
+  'close',
+  'edit',
+  'add-label',
+  'add-comment',
+  'upload-attachment',
+  'delete-attachment'
+])
 
 const tabs = ['Comments', 'Activity', 'Attachments']
 const activeTab = ref('Comments')
@@ -220,65 +225,54 @@ const newComment = ref('')
 const newLabel = ref('')
 const newLabelColor = ref('#40E0D0')
 
-// Storage keys
-const storageKey = () => `card_labels_${props.card.id}`
-const attachmentKey = () => `card_attachments_${props.card.id}`
-
-// Load labels & attachments
-onMounted(() => {
-  const savedLabels = localStorage.getItem(storageKey())
-  props.card.labels = savedLabels ? JSON.parse(savedLabels) : props.card.labels || []
-
-  const savedAttachments = localStorage.getItem(attachmentKey())
-  props.card.attachments = savedAttachments ? JSON.parse(savedAttachments) : props.card.attachments || []
-})
-
-// Save labels
-watch(
-  () => props.card.labels,
-  (v) => localStorage.setItem(storageKey(), JSON.stringify(v)),
-  { deep: true }
-)
-
-// Save attachments
-watch(
-  () => props.card.attachments,
-  (v) => localStorage.setItem(attachmentKey(), JSON.stringify(v)),
-  { deep: true }
-)
-
-// Actions
-function close() { emit('close') }
-function editCard() { emit('edit', props.card) }
-
-function addComment() {
-  if (!props.card.comments) props.card.comments = []
-  props.card.comments.push(newComment.value.trim())
-  newComment.value = ''
+function close() {
+  emit('close')
 }
+
+function editCard() {
+  emit('edit', props.card)
+}
+
+/* ---------------- LABELS ---------------- */
 
 function addLabel() {
   if (!newLabel.value.trim()) return
-  if (!props.card.labels) props.card.labels = []
 
-  props.card.labels.push({ text: newLabel.value.trim(), color: newLabelColor.value })
+  emit('add-label', {
+    text: newLabel.value,
+    color: newLabelColor.value
+  })
+
   newLabel.value = ''
 }
 
-// Attachments
+/* ---------------- COMMENTS ---------------- */
+
+function addComment() {
+  if (!newComment.value.trim()) return
+
+  emit('add-comment', newComment.value)
+
+  newComment.value = ''
+}
+
+/* ---------------- ATTACHMENTS ---------------- */
+
 function handleFileUpload(event) {
   const file = event.target.files[0]
   if (!file) return
 
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    props.card.attachments.push({ name: file.name, type: file.type, data: e.target.result })
-  }
-  reader.readAsDataURL(file)
+  emit('upload-attachment', file)
 }
 
-function removeAttachment(index) {
-  props.card.attachments.splice(index, 1)
+function removeAttachment(file) {
+  emit('delete-attachment', file)
+}
+
+const fileInput = ref(null)
+
+function triggerFileInput() {
+  fileInput.value?.click()
 }
 </script>
 
