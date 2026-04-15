@@ -209,3 +209,80 @@ export async function deleteAttachment(id) {
 
   return true
 }
+
+export async function fetchComments(cardId) {
+  const { data, error } = await supabase
+    .from('card_comments')
+    .select('*')
+    .eq('card_id', cardId)
+    .order('created_at')
+
+  if (error) throw error
+  return data
+}
+
+export async function addComment(cardId, comment) {
+  const { data, error } = await supabase
+    .from('card_comments')
+    .insert({
+      card_id: cardId,
+      comment
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function createLabel(boardId, name, color) {
+  const { data, error } = await supabase
+    .from('labels')
+    .insert({
+      board_id: boardId,
+      name,
+      color
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+export async function addLabelToCard(cardId, labelId) {
+  const { data, error } = await supabase
+    .from('card_labels')
+    .insert({
+      card_id: cardId,
+      label_id: labelId
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function fetchLabels(cardId) {
+  const { data, error } = await supabase
+    .from('card_labels')
+    .select(`
+      label_id,
+      labels!inner (
+        id,
+        name,
+        color
+      )
+    `)
+    .eq('card_id', cardId)
+
+  if (error) throw error
+
+  return data.map(item => ({
+    id: item.labels?.id,
+    text: item.labels?.name || 'Geen naam',
+    color: item.labels?.color || '#40E0D0'
+  }))
+}

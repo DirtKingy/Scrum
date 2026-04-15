@@ -60,6 +60,8 @@
       @edit="openEditFromOverlay"
       @upload-attachment="uploadAttachment"
       @delete-attachment="deleteAttachment"
+      @add-label="addLabel"
+      @add-comment="addComment"
     />
 
     <!-- Modals -->
@@ -200,7 +202,10 @@ async function uploadAttachment(file) {
     activeCard.value.attachments = []
   }
 
-  activeCard.value.attachments.push(uploaded)
+  activeCard.value.attachments = [
+    ...activeCard.value.attachments,
+    uploaded
+  ]
 }
 
 async function deleteAttachment(file) {
@@ -208,6 +213,28 @@ async function deleteAttachment(file) {
 
   activeCard.value.attachments =
     activeCard.value.attachments.filter(a => a.id !== file.id)
+}
+
+async function addComment(text) {
+  if (!activeCard.value) return
+
+  const cardId = activeCard.value.id
+  await store.addComment(cardId, text)
+
+  if (!activeCard.value.comments) {
+    activeCard.value.comments = []
+  }
+}
+
+async function addLabel(label) {
+  if (!activeCard.value) return
+
+  const cardId = activeCard.value.id
+  await store.addLabel(cardId, label)
+
+  if (!activeCard.value.labels) {
+    activeCard.value.labels = []
+  }
 }
 
 // ------------------- DRAG COLUMNS -------------------

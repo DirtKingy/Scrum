@@ -171,6 +171,8 @@ export const useBoardsStore = defineStore('boards', () => {
 
       for (const card of cards) {
         card.attachments = await boardService.fetchAttachments(card.id)
+        card.comments = await boardService.fetchComments(card.id)
+        card.labels = await boardService.fetchLabels(card.id)
       }
 
       col.cards = cards
@@ -179,7 +181,7 @@ export const useBoardsStore = defineStore('boards', () => {
       toast.showToast({ message: 'Kon kaarten niet laden', type: 'error' })
     }
   }
-  
+
   async function createCard(boardId, columnId, { title, description }) {
     try {
       const col = findColumn(boardId, columnId)
@@ -284,12 +286,77 @@ export const useBoardsStore = defineStore('boards', () => {
     }
   }
 
+  async function addComment(cardId, text) {
+    try {
+      const newComment = await boardService.addComment(cardId, text)
+
+      const card = findCardById(cardId)
+
+      if (card) {
+        if (!card.comments) card.comments = []
+
+        card.comments.push(newComment) // 👈 gebruik DB response
+      }
+
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  function findCardById(cardId) {
+    for (const board of boards.value) {
+      for (const col of board.columns) {
+        const card = col.cards.find(c => c.id === cardId)
+        if (card) return card
+      }
+    }
+    return null
+  }
+
+  function findBoardByCardId(cardId) {
+    for (const board of boards.value) {
+      for (const col of board.columns) {
+        if (col.cards.some(c => c.id === cardId)) {
+          return board
+        }
+      }
+    }
+    return null
+  }
+
+  async function addLabel(cardId, { name, color }) {
+    try {
+      const board = findBoardByCardId(cardId)
+      const card = findCardById(cardId)
+
+      if (!board || !card) return
+
+      const label = await boardService.createLabel(
+        board.id,
+        name,
+        color
+      )
+
+      await boardService.addLabelToCard(cardId, label.id)
+
+      if (!card.labels) card.labels = []
+
+      card.labels.push({
+        id: label.id,
+        name: label.name,
+        color: label.color
+      })
+
+    } catch (err) {
+      console.error(err)
+    }
+  }
   return {
     boards, sortedBoards, getBoardById, getColumnsByBoard, getCardsByColumn,
     activeCard, openCardDetail, closeCardDetail,
     fetchBoards, createBoard, updateBoard, deleteBoard,
     fetchColumns, createColumn, updateColumn, deleteColumn, moveColumn,
     fetchCards, createCard, updateCard, moveCard,
-    fetchAttachments, uploadAttachment, deleteAttachment
+    fetchAttachments, uploadAttachment, deleteAttachment, addComment, addLabel
   }
 })

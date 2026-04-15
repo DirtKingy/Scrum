@@ -33,11 +33,11 @@
               :key="index"
               class="px-2 py-1 rounded text-xs font-semibold"
               :style="{
-                backgroundColor: label.color || 'var(--color-accent)',
+                backgroundColor: label.labels?.color || label.color || 'var(--color-accent)',
                 color: '#0f172a'
               }"
             >
-              {{ label.text }}
+              {{ label.labels?.name || label.name || label.text }}
             </span>
 
             <span v-if="!card.labels?.length" class="text-text-muted text-sm">
@@ -109,8 +109,8 @@
           <!-- Comments -->
           <section v-if="activeTab === 'Comments'" class="flex-1 flex flex-col">
             <ul class="flex-1 overflow-y-auto mb-3">
-              <li v-for="(comment, index) in card.comments" :key="index">
-                {{ comment }}
+              <li v-for="comment in card.comments" :key="comment.id">
+                {{ comment.comment }}
               </li>
               <li v-if="!card.comments?.length">Geen comments</li>
             </ul>
@@ -239,7 +239,7 @@ function addLabel() {
   if (!newLabel.value.trim()) return
 
   emit('add-label', {
-    text: newLabel.value,
+    name: newLabel.value.trim(),
     color: newLabelColor.value
   })
 
@@ -251,7 +251,7 @@ function addLabel() {
 function addComment() {
   if (!newComment.value.trim()) return
 
-  emit('add-comment', newComment.value)
+  emit('add-comment', newComment.value.trim())
 
   newComment.value = ''
 }
