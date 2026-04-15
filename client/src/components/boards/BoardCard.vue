@@ -1,7 +1,18 @@
 <template>
   <article
     @click="openCard"
-    class="p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer bg-surface"
+    class="
+      bg-[var(--color-surface-hover)]
+      border border-[var(--color-border)]
+      rounded-lg
+      p-3
+      shadow-sm
+      hover:shadow-lg
+      hover:-translate-y-0.5
+      hover:border-[var(--color-accent-muted)]
+      transition-all duration-200 ease-out
+      cursor-pointer
+    "
   >
     <!-- Label kleuren -->
     <span

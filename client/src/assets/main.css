@@ -47,13 +47,14 @@
 /* Basis layout styling */
 html {
   color-scheme: dark;
-  background-color: var(--color-dark-bg);
-  color: white;
+  background-color: var(--color-bg);
+  color: var(--color-text);
   font-family: var(--font-sans);
 }
 
 body {
-  @apply bg-[var(--color-dark-bg)] text-white;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 /* Headers gebruiken display font */
