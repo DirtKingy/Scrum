@@ -73,28 +73,41 @@
           + Toevoegen
         </button>
 
-        <!-- Templates als horizontale knoppen -->
-        <section class="flex gap-3 flex-wrap mt-4">
+        <!-- Templates horizontaal scrollbaar -->
+        <section class="flex gap-4 mt-4 overflow-x-auto whitespace-nowrap pb-3 snap-x">
+
+          <!-- Custom templates -->
           <label
             v-for="(template, index) in customTemplates"
             :key="index"
-            class="cursor-pointer border rounded-xl p-4 transition flex flex-col gap-2"
-            :class="selectedTemplate === template ? 'ring-2 ring-blue-500 bg-blue-50/40' : 'hover:bg-[var(--color-accent-muted)]'"
+            class="cursor-pointer rounded-xl p-4 transition flex flex-col gap-2 min-w-[220px] max-w-[250px] flex-shrink-0 snap-start border shadow-sm"
+            :class="selectedTemplate === template
+              ? 'bg-[var(--color-primary-btn)] text-white border-transparent shadow-md ring-2 ring-[var(--color-primary-btn)]'
+              : 'bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-border)] hover:bg-[var(--color-accent-muted)] hover:shadow-md'"
             @click="selectedTemplate = template"
           >
-            <span class="font-semibold">{{ template.name }}</span>
-            <span class="text-sm text-[var(--color-text-muted)]">
+            <span class="font-semibold text-base truncate">
+              {{ template.name }}
+            </span>
+
+            <span class="text-sm opacity-80 truncate">
               {{ template.columns.join(' → ') }}
             </span>
           </label>
 
+          <!-- Add new template -->
           <label
-            class="cursor-pointer border rounded-xl p-4 transition flex flex-col gap-2 bg-gray-100 hover:bg-gray-200"
+            class="cursor-pointer rounded-xl p-4 transition flex flex-col gap-2 min-w-[220px] max-w-[250px] flex-shrink-0 snap-start border shadow-sm
+                   bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-border)]
+                   hover:bg-[var(--color-accent-muted)] hover:shadow-md"
             @click="addCustomTemplate"
           >
-            <span class="font-semibold">+ Nieuwe template</span>
-            <span class="text-sm text-[var(--color-text-muted)]">Maak je eigen kolommen</span>
+            <span class="font-semibold truncate">+ Nieuwe template</span>
+            <span class="text-sm opacity-80 truncate">
+              Maak je eigen kolommen
+            </span>
           </label>
+
         </section>
 
       </form>
@@ -171,7 +184,6 @@ onMounted(() => {
   boardsStore.fetchBoards()
 })
 
-// Update localStorage telkens de templates wijzigen
 watch(customTemplates, () => {
   localStorage.setItem('customTemplates', JSON.stringify(customTemplates.value))
 }, { deep: true })
@@ -219,11 +231,9 @@ function handleDelete() {
 async function addBoard() {
   if (!newBoardName.value) return
 
-  // Maak board aan in store/backend
   await boardsStore.createBoard(newBoardName.value, false)
   const newBoard = boardsStore.boards[boardsStore.boards.length - 1]
 
-  // Voeg kolommen toe van geselecteerde template
   if (selectedTemplate.value) {
     for (const colName of selectedTemplate.value.columns) {
       const col = await boardsStore.createColumn(newBoard.id, colName)

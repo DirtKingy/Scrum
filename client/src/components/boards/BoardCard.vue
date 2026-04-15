@@ -1,9 +1,25 @@
 <template>
   <article
     @click="openCard"
-    class="p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+    class="p-3 rounded-lg shadow hover:shadow-lg transition cursor-pointer bg-surface"
   >
-    <h3>{{ card.title }}</h3>
+    <!-- Label kleuren -->
+    <span
+      v-if="card.labels && card.labels.length"
+      class="flex gap-1 mb-2"
+    >
+      <span
+        v-for="(label, index) in card.labels"
+        :key="index"
+        class="h-1.5 flex-1 rounded"
+        :style="{ backgroundColor: label.color }"
+      ></span>
+    </span>
+
+    <!-- Titel -->
+    <h3 class="text-text font-medium break-words">
+      {{ card.title }}
+    </h3>
   </article>
 </template>
 

@@ -27,9 +27,10 @@
 
       <!-- Footer -->
       <footer class="flex justify-end gap-3">
+        <!-- Cancel knop -->
         <button
           @click="$emit('close')"
-          class="px-4 py-2 rounded-lg transition"
+          class="px-4 py-2 rounded-lg font-medium transition border hover:border-gray-400"
           style="
             background-color: var(--color-primary-btn);
             color: var(--color-text);
@@ -39,12 +40,13 @@
           {{ cancelText }}
         </button>
 
+        <!-- Confirm knop -->
         <button
           @click="$emit('confirm')"
-          class="px-4 py-2 rounded-lg text-white font-semibold transition"
+          class="px-4 py-2 rounded-lg font-semibold transition shadow-md hover:brightness-110"
           :style="danger
-            ? 'background-color: var(--color-danger-dark);'
-            : 'background-color: var(--color-accent);'"
+            ? 'background-color: var(--color-danger-dark); color: white;'
+            : 'background-color: var(--color-accent); color: #0f172a;'"
         >
           {{ confirmText }}
         </button>

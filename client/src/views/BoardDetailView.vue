@@ -1,3 +1,4 @@
+<!-- BoardPage.vue -->
 <template>
   <main class="min-h-screen font-sans p-6"
         :style="{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }">
