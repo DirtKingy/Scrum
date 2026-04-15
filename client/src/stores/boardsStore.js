@@ -8,6 +8,8 @@ export const useBoardsStore = defineStore('boards', () => {
   const attachmentsByCard = ref({})
   const boards = ref([])
   const toast = useToastStore()
+  const allLabels = ref([])
+
 
   // -------------------- HELPERS --------------------
   const findBoard = (boardId) => boards.value.find(b => b.id === boardId)
@@ -324,39 +326,91 @@ export const useBoardsStore = defineStore('boards', () => {
     return null
   }
 
-  async function addLabel(cardId, { name, color }) {
+  async function createLabel(boardId, name, color) {
+    const label = await boardService.createLabel(boardId, name, color)
+    return label
+  }
+
+  async function addLabelToCard(cardId, labelId) {
     try {
-      const board = findBoardByCardId(cardId)
       const card = findCardById(cardId)
+      if (!card) return
 
-      if (!board || !card) return
-
-      const label = await boardService.createLabel(
-        board.id,
-        name,
-        color
-      )
-
-      await boardService.addLabelToCard(cardId, label.id)
+      await boardService.addLabelToCard(cardId, labelId)
 
       if (!card.labels) card.labels = []
 
-      card.labels.push({
-        id: label.id,
-        name: label.name,
-        color: label.color
-      })
+      // prevent duplicates
+      const exists = card.labels.some(l => l.id === labelId)
+      if (exists) return
+
+      const label = allLabels.value.find(l => l.id === labelId)
+
+      if (label) {
+        card.labels.push(label)
+      }
 
     } catch (err) {
       console.error(err)
     }
   }
+
+  async function removeLabelFromCard(cardId, labelId) {
+    try {
+      const card = findCardById(cardId)
+      if (!card) return
+
+      await boardService.removeLabelFromCard(cardId, labelId)
+
+      card.labels = card.labels.filter(l => l.id !== labelId)
+
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  async function fetchAllLabels(boardId) {
+    const data = await boardService.fetchAllLabels(boardId)
+    allLabels.value = data
+  }
+
   return {
-    boards, sortedBoards, getBoardById, getColumnsByBoard, getCardsByColumn,
-    activeCard, openCardDetail, closeCardDetail,
-    fetchBoards, createBoard, updateBoard, deleteBoard,
-    fetchColumns, createColumn, updateColumn, deleteColumn, moveColumn,
-    fetchCards, createCard, updateCard, moveCard,
-    fetchAttachments, uploadAttachment, deleteAttachment, addComment, addLabel
+    boards,
+    sortedBoards,
+    getBoardById,
+    getColumnsByBoard,
+    getCardsByColumn,
+
+    activeCard,
+    openCardDetail,
+    closeCardDetail,
+
+    fetchBoards,
+    createBoard,
+    updateBoard,
+    deleteBoard,
+
+    fetchColumns,
+    createColumn,
+    updateColumn,
+    deleteColumn,
+    moveColumn,
+
+    fetchCards,
+    createCard,
+    updateCard,
+    moveCard,
+
+    fetchAttachments,
+    uploadAttachment,
+    deleteAttachment,
+    addComment,
+
+    createLabel,
+    addLabelToCard,
+    removeLabelFromCard,
+    fetchAllLabels,
+
+    allLabels
   }
 })

@@ -56,14 +56,17 @@
     <CardDetailOverlay
       v-if="activeCard"
       :card="activeCard"
-      @close="closeCardOverlay"
-      @edit="openEditFromOverlay"
+      :labels="allLabels"
+      @add-label="addLabel"
+      @remove-label="removeLabel"
+      @create-label="createLabel"
+      @add-comment="addComment"
       @upload-attachment="uploadAttachment"
       @delete-attachment="deleteAttachment"
-      @add-label="addLabel"
-      @add-comment="addComment"
+      @close="closeCardOverlay"
+      @edit="openEditFromOverlay"
     />
-
+    
     <!-- Modals -->
     <BaseModal v-if="showColumnModal" title="Nieuwe Kolom" @close="showColumnModal = false" @confirm="createColumn">
       <input
@@ -135,11 +138,18 @@ const showCardModal = ref(false)
 const showEditModal = ref(false)
 const selectedCard = ref({ title: '', description: '', column_id: null })
 const newColumnName = ref('')
+const allLabels = ref([])
 
 // Load board data
 async function loadBoardData() {
   await store.fetchBoards()
   await store.fetchColumns(boardId)
+
+  await store.fetchAllLabels(boardId)
+
+  allLabels.value = store.allLabels
+  console.log(allLabels.value)
+
   for (const col of store.getColumnsByBoard(boardId).value) {
     await store.fetchCards(boardId, col.id)
   }
@@ -229,12 +239,21 @@ async function addComment(text) {
 async function addLabel(label) {
   if (!activeCard.value) return
 
-  const cardId = activeCard.value.id
-  await store.addLabel(cardId, label)
+  await store.addLabelToCard(activeCard.value.id, label.id)
+  await store.fetchCards(boardId, activeCard.value.column_id)
+}
 
-  if (!activeCard.value.labels) {
-    activeCard.value.labels = []
-  }
+async function removeLabel(label) {
+  if (!activeCard.value) return
+
+  await store.removeLabelFromCard(activeCard.value.id, label.id)
+  await store.fetchCards(boardId, activeCard.value.column_id)
+}
+
+async function createLabel(label) {
+  const created = await store.createLabel(boardId, label.name, label.color)
+
+  allLabels.value.push(created)
 }
 
 // ------------------- DRAG COLUMNS -------------------

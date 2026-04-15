@@ -247,7 +247,6 @@ export async function createLabel(boardId, name, color) {
     .single()
 
   if (error) throw error
-
   return data
 }
 
@@ -261,8 +260,24 @@ export async function addLabelToCard(cardId, labelId) {
     .select()
     .single()
 
-  if (error) throw error
+  // Supabase unique constraint error handling (optional but good)
+  if (error && error.code !== '23505') {
+    throw error
+  }
+
   return data
+}
+
+export async function removeLabelFromCard(cardId, labelId) {
+  const { error } = await supabase
+    .from('card_labels')
+    .delete()
+    .eq('card_id', cardId)
+    .eq('label_id', labelId)
+
+  if (error) throw error
+
+  return true
 }
 
 export async function fetchLabels(cardId) {
@@ -270,7 +285,7 @@ export async function fetchLabels(cardId) {
     .from('card_labels')
     .select(`
       label_id,
-      labels!inner (
+      labels (
         id,
         name,
         color
@@ -281,8 +296,18 @@ export async function fetchLabels(cardId) {
   if (error) throw error
 
   return data.map(item => ({
-    id: item.labels?.id,
-    text: item.labels?.name || 'Geen naam',
-    color: item.labels?.color || '#40E0D0'
+    id: item.labels.id,
+    name: item.labels.name,
+    color: item.labels.color
   }))
+}
+
+export async function fetchAllLabels(boardId) {
+  const { data, error } = await supabase
+    .from('labels')
+    .select('id, name, color')
+    .eq('board_id', boardId)
+
+  if (error) throw error
+  return data
 }
