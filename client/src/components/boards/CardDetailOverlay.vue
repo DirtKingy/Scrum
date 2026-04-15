@@ -150,9 +150,32 @@
 
           <!-- COMMENTS (ORIGINEEL TERUG) -->
           <section v-if="activeTab === 'Comments'" class="flex-1 flex flex-col">
-            <ul class="flex-1 overflow-y-auto mb-3">
-              <li v-for="comment in card.comments" :key="comment.id">
-                {{ comment.comment }}
+            <ul class="flex-1 overflow-y-auto mb-3 space-y-2">
+              <li
+                v-for="comment in card.comments"
+                :key="comment.id"
+                class="flex items-start gap-3 p-3 rounded-lg bg-surface border border-gray-200/40 shadow-sm"
+              >
+                <!-- <span
+                  class="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-[#0f172a] text-xs font-bold flex-shrink-0"
+                >
+                  {{ (comment.user?.name || 'U').charAt(0).toUpperCase() }}
+                </span> -->
+
+                <section class="flex-1">
+                  <!-- <p class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-semibold text-text">
+                      {{ comment.user?.name || 'Unknown' }}
+                    </span>
+                    <span class="text-xs text-text-muted">
+                      {{ comment.created_at }}
+                    </span>
+                  </p> -->
+
+                  <p class="text-sm text-text-muted leading-snug">
+                    {{ comment.comment }}
+                  </p>
+                </section>
               </li>
 
               <li v-if="!card.comments?.length">
