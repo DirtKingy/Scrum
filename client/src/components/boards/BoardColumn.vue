@@ -16,17 +16,17 @@
         </button>
     </header>
 
+    <section :data-column-id="column.id">
     <draggable
-      v-model="column.cards"
+      :list="column.cards"
       group="cards"
       item-key="id"
+      @end="onDragUpdate"
+      :data-column-id="column.id"
       :animation="200"
       ghost-class="drag-ghost"
       chosen-class="drag-chosen"
-      @start="dragging = true"
-      @end="onDragEnd"
       class="space-y-3 flex-1 overflow-y-auto pr-1"
-      :data-column-id="column.id"
     >
       <template #item="{ element }">
         <transition name="card" mode="out-in">
@@ -38,6 +38,7 @@
         </transition>
       </template>
     </draggable>
+    </section>
 
     <footer class="mt-4">
       <button @click="onAddCard(column.id)" class="text-base font-medium hover:opacity-80 transition"
@@ -80,30 +81,46 @@ async function deleteColumn() {
   await store.deleteColumn(props.column.board_id, props.column.id)
 }
 
-function onDragEnd(evt) {
-  dragging.value = false
+function onDragUpdate(evt) {
+  console.log("🟡 DRAG EVENT FIRED", evt)
 
-  const card = evt.item.__draggable_context?.element
-  if (!card) return
+  const newIndex =
+    evt.newIndex ??
+    evt?.added?.newIndex ??
+    evt?.moved?.newIndex ??
+    0
 
-  const fromColumnId = evt.from?.closest('[data-column-id]')?.dataset.columnId
-  const toColumnId = evt.to?.closest('[data-column-id]')?.dataset.columnId
+  const toColumnId = props.column.id
 
+  // 👉 pak card direct uit DOM state (niet uit evt)
+  const card = props.column.cards[newIndex]
 
-  if (!fromColumnId || !toColumnId) {
-    console.error('Column IDs missing', { fromColumnId, toColumnId })
+  console.log("🧩 resolved card from state:", card)
+
+  if (!card) {
+    console.warn("❌ card not found in column state")
     return
   }
+
+  const fromColumnId =
+    evt.from?.__vueParentComponent?.props?.column?.id ||
+    card.column_id
+
+  console.log("📦 resolved move:", {
+    cardId: card.id,
+    fromColumnId,
+    toColumnId,
+    newIndex
+  })
 
   store.moveCard(
     props.column.board_id,
     card.id,
     fromColumnId,
     toColumnId,
-    evt.newIndex
+    newIndex
   )
-}
-</script>
+}</script>
 
 <style>
 .drag-ghost { opacity: 0.4; }

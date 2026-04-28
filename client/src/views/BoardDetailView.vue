@@ -1,4 +1,3 @@
-<!-- BoardPage.vue -->
 <template>
   <main class="min-h-screen font-sans p-6"
         :style="{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }">
@@ -41,13 +40,14 @@
       item-key="id"
       direction="horizontal"
       class="flex gap-4"
-      @end="onColumnDragEnd"
+      @change="onColumnDragEnd"
     >
       <template #item="{ element }">
         <BoardColumn
           :column="element"
           :on-add-card="openNewCardModal"
           @select-card="openCardOverlay"
+          @drag-intent="onCardDrag"
         />
       </template>
     </draggable>
@@ -120,17 +120,28 @@ const boardId = route.params.id
 const store = useBoardsStore()
 
 // Computed
-const board = computed(() => store.getBoardById(boardId).value)
-const boardColumns = computed({
-  get: () => store.getColumnsByBoard(boardId).value,
-  set: (newCols) => {
-    const board = store.getBoardById(boardId).value
-    if (!board) return
+// const board = computed(() => store.getBoardById(boardId).value)
+// const boardColumns = computed(() => {
+//   return store.getBoardById(boardId).value?.columns ?? []
+// })
+// const cards = computed(() => {
+//   const col = store.getColumnsByBoard(props.column.board_id)
+//     .value.find(c => c.id === props.column.id)
 
-    board.columns = newCols
+//   return col?.cards ?? []
+// })
+const activeCard = computed(() => store.activeCard)
+const board = computed(() =>
+  store.getBoardById(boardId).value ?? null
+)
+
+const boardColumns = computed({
+  get: () => board.value?.columns ?? [],
+  set: (val) => {
+    if (!board.value) return
+    board.value.columns = val
   }
 })
-const activeCard = computed(() => store.activeCard)
 
 // Modals
 const showColumnModal = ref(false)
@@ -203,6 +214,14 @@ async function saveEditedCard() {
   showEditModal.value = false
 }
 
+function onCardDrag(payload) {
+  store.moveCard({
+    boardId,
+    evt: payload.evt,
+    columnId: payload.columnId
+  })
+}
+
 async function uploadAttachment(file) {
   if (!activeCard.value) return
 
@@ -258,7 +277,8 @@ async function createLabel(label) {
 
 // ------------------- DRAG COLUMNS -------------------
 function onColumnDragEnd() {
-  store.moveColumn(boardId, boardColumns.value)
+  if (!board.value) return
+  store.moveColumn(boardId, board.value.columns)
 }
 </script>
 

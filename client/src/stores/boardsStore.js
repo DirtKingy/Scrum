@@ -47,7 +47,7 @@ export const useBoardsStore = defineStore('boards', () => {
   async function fetchBoards() {
     try {
       const data = await boardService.getBoards()
-      boards.value = data.map(b => ({ ...b, columns: [] }))
+      boards.value = data
     } catch (err) {
       console.error(err)
       toast.showToast({ message: 'Kon boards niet laden', type: 'error' })
@@ -216,34 +216,46 @@ export const useBoardsStore = defineStore('boards', () => {
     }
   }
 
-  async function moveCard(boardId, cardId, fromColumnId, toColumnId, newIndex) {
-    const fromCol = findColumn(boardId, fromColumnId)
-    const toCol = findColumn(boardId, toColumnId)
-    if (!fromCol || !toCol) return
+async function moveCard(boardId, cardId, fromColumnId, toColumnId, newIndex) {
+  console.log("🚀 moveCard CALLED", { boardId, cardId, fromColumnId, toColumnId, newIndex })
 
-    const cardIndex = fromCol.cards.findIndex(c => c.id === cardId)
-    if (cardIndex === -1) return
-    const [card] = fromCol.cards.splice(cardIndex, 1)
-    card.column_id = toColumnId
-    toCol.cards.splice(newIndex, 0, card)
+  const fromCol = findColumn(boardId, fromColumnId)
+  const toCol = findColumn(boardId, toColumnId)
 
-    // Re-index
-    const renumber = (cards) => cards.map((c, i) => ({ ...c, position: i }))
-    const fromPayload = renumber(fromCol.cards)
-    const toPayload = (fromColumnId !== toColumnId) ? renumber(toCol.cards) : fromPayload
+  if (!fromCol || !toCol) return
 
-    try {
-      if (fromColumnId === toColumnId) {
-        await boardService.updateCardPositions(fromPayload)
-      } else {
-        await boardService.updateCardPositions(fromPayload)
-        await boardService.updateCardPositions(toPayload)
-      }
-    } catch (err) {
-      console.error('Kon card move niet opslaan', err)
-    }
+  const fromIndex = fromCol.cards.findIndex(c => c.id === cardId)
+  if (fromIndex === -1) return
+
+  const sameColumn = fromColumnId === toColumnId
+  console.log("same column?", sameColumn)
+
+  // altijd eerst verwijderen
+  const [moved] = fromCol.cards.splice(fromIndex, 1)
+
+  if (!sameColumn) {
+    console.log("➡️ cross column move")
+    moved.column_id = toColumnId
+    toCol.cards.splice(newIndex, 0, moved)
+  } else {
+    console.log("🔁 reorder only")
+    fromCol.cards.splice(newIndex, 0, moved)
   }
 
+  fromCol.cards = [...fromCol.cards]
+  toCol.cards = [...toCol.cards]
+
+  const payload = fromCol.cards.map((c, i) => ({
+    id: c.id,
+    position: i,
+    column_id: fromColumnId
+  }))
+
+  console.log("📤 payload:", payload)
+
+  const res = await boardService.updateCardPositions(payload)
+  console.log("backend response:", res)
+}
   // -------------------- ATTACHMENTS (via service) --------------------
   async function fetchAttachments(cardId) {
     try {
