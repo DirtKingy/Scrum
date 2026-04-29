@@ -250,9 +250,11 @@ export const useBoardsStore = defineStore('boards', () => {
 
   function findColumnByCard(boardId, cardId) {
     const board = findBoard(boardId)
-    if (!board) return null
+    if (!board || !board.columns) return null
 
     for (const col of board.columns) {
+      if (!col.cards) continue
+
       if (col.cards.some(c => c.id === cardId)) {
         return col
       }
@@ -308,11 +310,18 @@ export const useBoardsStore = defineStore('boards', () => {
       const newComment = await boardService.addComment(cardId, text)
 
       const card = findCardById(cardId)
+      if (!card) return
 
-      if (card) {
-        if (!card.comments) card.comments = []
+      if (!card.comments) card.comments = []
 
-        card.comments.push(newComment) // 👈 gebruik DB response
+      card.comments.push(newComment)
+
+      if (activeCard.value?.id === cardId) {
+        if (!activeCard.value.comments) {
+          activeCard.value.comments = []
+        }
+
+        activeCard.value.comments.push(newComment)
       }
 
     } catch (err) {
@@ -330,12 +339,17 @@ export const useBoardsStore = defineStore('boards', () => {
     return null
   }
 
-  function findBoardByCardId(cardId) {
+  function findCardById(cardId) {
     for (const board of boards.value) {
+
+      if (!board.columns) continue  // 👈 FIX
+
       for (const col of board.columns) {
-        if (col.cards.some(c => c.id === cardId)) {
-          return board
-        }
+
+        if (!col.cards) continue // 👈 EXTRA VEILIG
+
+        const card = col.cards.find(c => c.id === cardId)
+        if (card) return card
       }
     }
     return null
@@ -347,40 +361,34 @@ export const useBoardsStore = defineStore('boards', () => {
   }
 
   async function addLabelToCard(cardId, labelId) {
-    try {
-      const card = findCardById(cardId)
-      if (!card) return
+    await boardService.addLabelToCard(cardId, labelId)
 
-      await boardService.addLabelToCard(cardId, labelId)
+    const card = findCardById(cardId)
+    if (!card) return
 
-      if (!card.labels) card.labels = []
+    const labels = await boardService.fetchLabels(cardId)
 
-      // prevent duplicates
-      const exists = card.labels.some(l => l.id === labelId)
-      if (exists) return
+    // 👇 BELANGRIJK
+    card.labels.splice(0, card.labels.length, ...labels)
 
-      const label = allLabels.value.find(l => l.id === labelId)
-
-      if (label) {
-        card.labels.push(label)
-      }
-
-    } catch (err) {
-      console.error(err)
+    // 👇 sync activeCard
+    if (activeCard.value?.id === cardId) {
+      activeCard.value.labels = card.labels
     }
   }
 
   async function removeLabelFromCard(cardId, labelId) {
-    try {
-      const card = findCardById(cardId)
-      if (!card) return
+    await boardService.removeLabelFromCard(cardId, labelId)
 
-      await boardService.removeLabelFromCard(cardId, labelId)
+    const card = findCardById(cardId)
+    if (!card) return
 
-      card.labels = card.labels.filter(l => l.id !== labelId)
+    const labels = await boardService.fetchLabels(cardId)
 
-    } catch (err) {
-      console.error(err)
+    card.labels.splice(0, card.labels.length, ...labels)
+
+    if (activeCard.value?.id === cardId) {
+      activeCard.value.labels = card.labels
     }
   }
 
