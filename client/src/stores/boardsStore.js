@@ -216,46 +216,49 @@ export const useBoardsStore = defineStore('boards', () => {
     }
   }
 
-async function moveCard(boardId, cardId, fromColumnId, toColumnId, newIndex) {
-  console.log("🚀 moveCard CALLED", { boardId, cardId, fromColumnId, toColumnId, newIndex })
+  async function moveCard({ boardId, cardId, toColumnId, newIndex }) {
+    const fromCol = findColumnByCard(boardId, cardId)
+    const toCol = findColumn(boardId, toColumnId)
 
-  const fromCol = findColumn(boardId, fromColumnId)
-  const toCol = findColumn(boardId, toColumnId)
+    if (!fromCol || !toCol) return
 
-  if (!fromCol || !toCol) return
+    const fromIndex = fromCol.cards.findIndex(c => c.id === cardId)
+    if (fromIndex === -1) return
 
-  const fromIndex = fromCol.cards.findIndex(c => c.id === cardId)
-  if (fromIndex === -1) return
+    const [moved] = fromCol.cards.splice(fromIndex, 1)
 
-  const sameColumn = fromColumnId === toColumnId
-  console.log("same column?", sameColumn)
-
-  // altijd eerst verwijderen
-  const [moved] = fromCol.cards.splice(fromIndex, 1)
-
-  if (!sameColumn) {
-    console.log("➡️ cross column move")
     moved.column_id = toColumnId
+
     toCol.cards.splice(newIndex, 0, moved)
-  } else {
-    console.log("🔁 reorder only")
-    fromCol.cards.splice(newIndex, 0, moved)
+
+    fromCol.cards = [...fromCol.cards]
+    toCol.cards = [...toCol.cards]
+
+    await persistColumn(fromCol)
+    if (fromCol.id !== toCol.id) await persistColumn(toCol)
   }
 
-  fromCol.cards = [...fromCol.cards]
-  toCol.cards = [...toCol.cards]
+  async function persistColumn(column) {
+    const payload = column.cards.map((c, i) => ({
+      id: c.id,
+      position: i,
+      column_id: column.id
+    }))
 
-  const payload = fromCol.cards.map((c, i) => ({
-    id: c.id,
-    position: i,
-    column_id: fromColumnId
-  }))
+    await boardService.updateCardPositions(payload)
+  }
 
-  console.log("📤 payload:", payload)
+  function findColumnByCard(boardId, cardId) {
+    const board = findBoard(boardId)
+    if (!board) return null
 
-  const res = await boardService.updateCardPositions(payload)
-  console.log("backend response:", res)
-}
+    for (const col of board.columns) {
+      if (col.cards.some(c => c.id === cardId)) {
+        return col
+      }
+    }
+    return null
+  }
   // -------------------- ATTACHMENTS (via service) --------------------
   async function fetchAttachments(cardId) {
     try {

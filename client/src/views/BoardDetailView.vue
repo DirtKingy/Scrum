@@ -35,8 +35,7 @@
 
     <!-- Columns met draggable -->
     <draggable
-      v-if="board"
-      v-model="boardColumns"
+      :list="boardColumns"
       item-key="id"
       direction="horizontal"
       class="flex gap-4"
@@ -47,7 +46,7 @@
           :column="element"
           :on-add-card="openNewCardModal"
           @select-card="openCardOverlay"
-          @drag-intent="onCardDrag"
+          @card-drag-intent="onCardDrag"
         />
       </template>
     </draggable>
@@ -135,13 +134,9 @@ const board = computed(() =>
   store.getBoardById(boardId).value ?? null
 )
 
-const boardColumns = computed({
-  get: () => board.value?.columns ?? [],
-  set: (val) => {
-    if (!board.value) return
-    board.value.columns = val
-  }
-})
+const boardColumns = computed(() =>
+  board.value?.columns ?? []
+)
 
 // Modals
 const showColumnModal = ref(false)
@@ -215,10 +210,14 @@ async function saveEditedCard() {
 }
 
 function onCardDrag(payload) {
+  if (!payload?.cardId) return
+
   store.moveCard({
     boardId,
-    evt: payload.evt,
-    columnId: payload.columnId
+    cardId: payload.cardId,
+    fromColumnId: payload.fromColumnId,
+    toColumnId: payload.toColumnId,
+    newIndex: payload.newIndex
   })
 }
 
