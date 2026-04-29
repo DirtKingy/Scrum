@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="fixed inset-0 z-50 flex justify-center items-start pt-10 sm:pt-20"
+    class="hidden sm:flex fixed inset-0 z-50 justify-center items-start pt-10 sm:pt-20"
     @click.self="close"
   >
     <section class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></section>
@@ -149,8 +149,8 @@
         <section class="flex-1 flex flex-col min-h-0">
 
           <!-- COMMENTS (ORIGINEEL TERUG) -->
-          <section v-if="activeTab === 'Comments'" class="flex-1 flex flex-col">
-            <ul class="flex-1 overflow-y-auto mb-3 space-y-2">
+          <section v-if="activeTab === 'Comments'" class="flex-1 flex flex-col min-h-0">
+            <ul class="flex-1 min-h-0 overflow-y-auto mb-3 space-y-2">
               <li
                 v-for="comment in card.comments"
                 :key="comment.id"
@@ -249,7 +249,7 @@
         </section>
 
         <!-- FOOTER -->
-        <footer class="flex justify-end gap-2 mt-4">
+        <footer class="flex justify-end gap-2 mt-4 flex-shrink-0">
           <button
             @click="editCard"
             class="px-4 py-2 bg-accent text-[#0f172a] rounded"

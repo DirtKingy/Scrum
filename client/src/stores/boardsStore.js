@@ -306,26 +306,18 @@ export const useBoardsStore = defineStore('boards', () => {
   }
 
   async function addComment(cardId, text) {
-    try {
-      const newComment = await boardService.addComment(cardId, text)
+    await boardService.addComment(cardId, text)
 
-      const card = findCardById(cardId)
-      if (!card) return
+    const comments = await boardService.fetchComments(cardId)
 
-      if (!card.comments) card.comments = []
+    const card = findCardById(cardId)
+    if (!card) return
 
-      card.comments.push(newComment)
+    // 🔥 replace volledige array (geen push!)
+    card.comments.splice(0, card.comments.length, ...comments)
 
-      if (activeCard.value?.id === cardId) {
-        if (!activeCard.value.comments) {
-          activeCard.value.comments = []
-        }
-
-        activeCard.value.comments.push(newComment)
-      }
-
-    } catch (err) {
-      console.error(err)
+    if (activeCard.value?.id === cardId) {
+      activeCard.value.comments = card.comments
     }
   }
 
