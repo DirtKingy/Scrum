@@ -44,7 +44,7 @@
       <template #item="{ element }">
         <BoardColumn
           :column="element"
-          :on-add-card="openNewCardModal"
+          @add-card="openNewCardModal"
           @select-card="openCardOverlay"
           @card-drag-intent="onCardDrag"
         />
